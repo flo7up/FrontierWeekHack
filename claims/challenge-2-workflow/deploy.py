@@ -76,7 +76,7 @@ def assess_claim(claim_id: str) -> str:
     return json.dumps(results, indent=2)
 
 
-def ensure_agents_deployed() -> tuple:
+def configure_agent_roles() -> tuple:
     """Configure the two local agent roles used by the workflow."""
     print("=== Step 1: Configure API-Key Agent Roles ===")
     print(f"  Configured: {TRIAGE_AGENT_NAME}")
@@ -197,7 +197,7 @@ def main():
         print("FOUNDRY_ENDPOINT and API_KEY must be set in .env")
         sys.exit(1)
 
-    triage_agent, decision_agent = ensure_agents_deployed()
+    triage_agent, decision_agent = configure_agent_roles()
     report = run_claims_workflow(triage_agent, decision_agent)
     print_claims_report(report)
 

@@ -1,5 +1,5 @@
 """
-Challenge 4: Production Workflow -- SDK Track
+Challenge 2: Local Workflow
 Multi-agent orchestration workflow for TireForge Industries.
 """
 
@@ -19,12 +19,12 @@ def _find_repo_root() -> Path:
 
 
 REPO_ROOT = _find_repo_root()
-sys.path.insert(0, str(REPO_ROOT.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from foundry_api import create_foundry_client, run_agent_response
 
 env_path = REPO_ROOT / ".env"
-load_dotenv(env_path)
+load_dotenv(env_path, override=True)
 
 FOUNDRY_ENDPOINT = os.getenv("FOUNDRY_ENDPOINT")
 API_KEY = os.getenv("API_KEY")
@@ -72,7 +72,7 @@ def check_thresholds(machine_id: str) -> str:
     return json.dumps(results, indent=2)
 
 
-def ensure_agents_deployed() -> tuple:
+def configure_agent_roles() -> tuple:
     """Configure the two local agent roles used by the workflow."""
     print("=== Step 1: Configure API-Key Agent Roles ===")
     print(f"  Configured: {ANOMALY_AGENT_NAME}")
@@ -134,7 +134,8 @@ def run_fault_diagnosis(diagnosis_agent_name: str, machine_id: str, anomalies: l
         model=MODEL_DEPLOYMENT_NAME,
         instructions=(
             "You are a mechanical fault diagnosis expert for TireForge Industries. "
-            "Identify the likely root cause, maintenance actions, and urgency."
+            "Identify the likely root cause, maintenance actions, and urgency. "
+            "Use at most 120 words."
         ),
         input_text=input_text,
     )
@@ -192,7 +193,7 @@ def main():
         print("FOUNDRY_ENDPOINT and API_KEY must be set in .env")
         sys.exit(1)
 
-    anomaly_agent, diagnosis_agent = ensure_agents_deployed()
+    anomaly_agent, diagnosis_agent = configure_agent_roles()
     report = run_factory_health_workflow(anomaly_agent, diagnosis_agent)
     print_factory_report(report)
 

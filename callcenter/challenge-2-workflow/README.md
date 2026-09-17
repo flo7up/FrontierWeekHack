@@ -11,19 +11,19 @@ Finish [Build Agents](../challenge-1-build/README.md) first. Keep the terminal i
 ### GitHub Codespaces
 
 ```bash
-python callcenter/challenge-2-workflow/deploy.py
+python callcenter/challenge-2-workflow/workflow.py
 ```
 
 ### Local Windows PowerShell
 
 ```powershell
-.\.venv\Scripts\python.exe callcenter/challenge-2-workflow/deploy.py
+.\.venv\Scripts\python.exe callcenter/challenge-2-workflow/workflow.py
 ```
 
 ### Local macOS or Linux
 
 ```bash
-./.venv/bin/python callcenter/challenge-2-workflow/deploy.py
+./.venv/bin/python callcenter/challenge-2-workflow/workflow.py
 ```
 
 This makes several model requests and may take a few minutes. Wait for **`Workflow complete!`** before starting another run. If it appears stuck, press **Ctrl+C** and ask the facilitator; do not repeatedly restart it. For connection errors, use the [Connect troubleshooting table](../challenge-0-setup/README.md#if-something-goes-wrong).
@@ -41,7 +41,7 @@ Notice that Challenge 1 used CALL-001, CALL-006, and CALL-007 for its second exa
 
 ## 3. Optional: Make the Report Easier to Review
 
-Open `callcenter/challenge-2-workflow/deploy.py` ([view code](./deploy.py)). Find `run_resolution_advisory()` and the `instructions` text containing `Use at most 120 words.` Replace that sentence with:
+Open [workflow.py](./workflow.py) in `callcenter/challenge-2-workflow`. Find `run_resolution_advisory()` and the `instructions` text containing `Use at most 120 words.` Replace that sentence with:
 
 ```text
 Use at most 120 words. Include a courteous customer response and HUMAN REVIEW NEEDED. Refer security concerns to a human; do not invent refund offers or company policy.

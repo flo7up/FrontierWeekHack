@@ -1,5 +1,5 @@
 """
-Challenge 4: Production Workflow -- SDK Track
+Challenge 2: Local Workflow
 Multi-agent orchestration workflow for NovaTel Communications call center.
 """
 
@@ -19,12 +19,12 @@ def _find_repo_root() -> Path:
 
 
 REPO_ROOT = _find_repo_root()
-sys.path.insert(0, str(REPO_ROOT.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from foundry_api import create_foundry_client, run_agent_response
 
 env_path = REPO_ROOT / ".env"
-load_dotenv(env_path)
+load_dotenv(env_path, override=True)
 
 FOUNDRY_ENDPOINT = os.getenv("FOUNDRY_ENDPOINT")
 API_KEY = os.getenv("API_KEY")
@@ -49,7 +49,7 @@ def lookup_customer(call_id: str) -> str:
     return json.dumps(call, indent=2)
 
 
-def ensure_agents_deployed() -> tuple:
+def configure_agent_roles() -> tuple:
     """Configure the two local agent roles used by the workflow."""
     print("=== Step 1: Configure API-Key Agent Roles ===")
     print(f"  Configured: {INTENT_AGENT_NAME}")
@@ -122,7 +122,8 @@ def run_resolution_advisory(resolution_agent_name: str, call_id: str, classifica
         model=MODEL_DEPLOYMENT_NAME,
         instructions=(
             "You are a resolution strategy expert for NovaTel Communications. Provide a recommended action, "
-            "script suggestion, escalation decision, available offers, and follow-up tasks."
+            "script suggestion, escalation decision, available offers, and follow-up tasks. "
+            "Use at most 120 words."
         ),
         input_text=input_text,
     )
@@ -188,7 +189,7 @@ def main():
         print("FOUNDRY_ENDPOINT and API_KEY must be set in .env")
         sys.exit(1)
 
-    intent_agent, resolution_agent = ensure_agents_deployed()
+    intent_agent, resolution_agent = configure_agent_roles()
     report = run_call_center_workflow(intent_agent, resolution_agent)
     print_shift_report(report)
 

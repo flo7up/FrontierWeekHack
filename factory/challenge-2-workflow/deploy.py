@@ -72,7 +72,7 @@ def check_thresholds(machine_id: str) -> str:
     return json.dumps(results, indent=2)
 
 
-def ensure_agents_deployed() -> tuple:
+def configure_agent_roles() -> tuple:
     """Configure the two local agent roles used by the workflow."""
     print("=== Step 1: Configure API-Key Agent Roles ===")
     print(f"  Configured: {ANOMALY_AGENT_NAME}")
@@ -193,7 +193,7 @@ def main():
         print("FOUNDRY_ENDPOINT and API_KEY must be set in .env")
         sys.exit(1)
 
-    anomaly_agent, diagnosis_agent = ensure_agents_deployed()
+    anomaly_agent, diagnosis_agent = configure_agent_roles()
     report = run_factory_health_workflow(anomaly_agent, diagnosis_agent)
     print_factory_report(report)
 

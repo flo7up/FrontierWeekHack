@@ -49,7 +49,7 @@ def lookup_customer(call_id: str) -> str:
     return json.dumps(call, indent=2)
 
 
-def ensure_agents_deployed() -> tuple:
+def configure_agent_roles() -> tuple:
     """Configure the two local agent roles used by the workflow."""
     print("=== Step 1: Configure API-Key Agent Roles ===")
     print(f"  Configured: {INTENT_AGENT_NAME}")
@@ -189,7 +189,7 @@ def main():
         print("FOUNDRY_ENDPOINT and API_KEY must be set in .env")
         sys.exit(1)
 
-    intent_agent, resolution_agent = ensure_agents_deployed()
+    intent_agent, resolution_agent = configure_agent_roles()
     report = run_call_center_workflow(intent_agent, resolution_agent)
     print_shift_report(report)
 

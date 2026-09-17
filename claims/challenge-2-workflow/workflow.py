@@ -1,5 +1,5 @@
 """
-Challenge 4: Production Workflow — Claims Processing
+Challenge 2: Local Workflow — Claims Processing
 Multi-agent orchestration workflow for ClaimSight Insurance.
 """
 
@@ -19,12 +19,12 @@ def _find_repo_root() -> Path:
 
 
 REPO_ROOT = _find_repo_root()
-sys.path.insert(0, str(REPO_ROOT.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from foundry_api import create_foundry_client, run_agent_response
 
 env_path = REPO_ROOT / ".env"
-load_dotenv(env_path)
+load_dotenv(env_path, override=True)
 
 FOUNDRY_ENDPOINT = os.getenv("FOUNDRY_ENDPOINT")
 API_KEY = os.getenv("API_KEY")
@@ -76,7 +76,7 @@ def assess_claim(claim_id: str) -> str:
     return json.dumps(results, indent=2)
 
 
-def ensure_agents_deployed() -> tuple:
+def configure_agent_roles() -> tuple:
     """Configure the two local agent roles used by the workflow."""
     print("=== Step 1: Configure API-Key Agent Roles ===")
     print(f"  Configured: {TRIAGE_AGENT_NAME}")
@@ -138,7 +138,8 @@ def run_claims_decision(decision_agent_name: str, claim_id: str, flags: list) ->
         model=MODEL_DEPLOYMENT_NAME,
         instructions=(
             "You are a senior claims adjuster for ClaimSight Insurance. Recommend APPROVE, "
-            "REQUEST DOCUMENTS, INVESTIGATE, or DENY, with reasoning, next steps, and urgency."
+            "REQUEST DOCUMENTS, INVESTIGATE, or DENY, with reasoning, next steps, and urgency. "
+            "Use at most 120 words."
         ),
         input_text=input_text,
     )
@@ -196,7 +197,7 @@ def main():
         print("FOUNDRY_ENDPOINT and API_KEY must be set in .env")
         sys.exit(1)
 
-    triage_agent, decision_agent = ensure_agents_deployed()
+    triage_agent, decision_agent = configure_agent_roles()
     report = run_claims_workflow(triage_agent, decision_agent)
     print_claims_report(report)
 

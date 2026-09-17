@@ -11,19 +11,19 @@ Finish [Build Agents](../challenge-1-build/README.md) first. Keep the terminal i
 ### GitHub Codespaces
 
 ```bash
-python factory/challenge-2-workflow/deploy.py
+python factory/challenge-2-workflow/workflow.py
 ```
 
 ### Local Windows PowerShell
 
 ```powershell
-.\.venv\Scripts\python.exe factory/challenge-2-workflow/deploy.py
+.\.venv\Scripts\python.exe factory/challenge-2-workflow/workflow.py
 ```
 
 ### Local macOS or Linux
 
 ```bash
-./.venv/bin/python factory/challenge-2-workflow/deploy.py
+./.venv/bin/python factory/challenge-2-workflow/workflow.py
 ```
 
 This makes several model requests and may take a few minutes. Wait for **`Workflow complete!`** before starting another run. If it appears stuck, press **Ctrl+C** and ask the facilitator; do not repeatedly restart it. For connection errors, use the [Connect troubleshooting table](../challenge-0-setup/README.md#if-something-goes-wrong).
@@ -39,7 +39,7 @@ With the unchanged [sample data](../challenge-1-build/sensor_data.json), the fin
 
 ## 3. Optional: Make the Report Easier to Review
 
-Open `factory/challenge-2-workflow/deploy.py` ([view code](./deploy.py)). Find `run_fault_diagnosis()` and the `instructions` text containing `Use at most 120 words.` Replace that sentence with:
+Open [workflow.py](./workflow.py) in `factory/challenge-2-workflow`. Find `run_fault_diagnosis()` and the `instructions` text containing `Use at most 120 words.` Replace that sentence with:
 
 ```text
 Use at most 120 words. Separate OBSERVED FACTS, POSSIBLE CAUSES, and HUMAN CHECKS. Do not present a possible cause as confirmed.

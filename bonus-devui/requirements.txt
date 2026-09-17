@@ -1,0 +1,5 @@
+agent-framework-core==1.17.0
+agent-framework-openai==1.14.3
+agent-framework-devui==1.0.0b260910
+openai==3.11.0
+python-dotenv==1.2.3

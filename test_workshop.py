@@ -109,7 +109,7 @@ class ScriptImportTests(unittest.TestCase):
             root = Path(directory)
             shutil.copyfile(source_root / "foundry_api.py", root / "foundry_api.py")
             for scenario in ("factory", "claims", "callcenter"):
-                for relative in ("challenge-1-build/agents.py", "challenge-2-workflow/deploy.py"):
+                for relative in ("challenge-1-build/agents.py", "challenge-2-workflow/workflow.py"):
                     with self.subTest(scenario=scenario, script=relative):
                         target = root / scenario / relative
                         target.parent.mkdir(parents=True, exist_ok=True)

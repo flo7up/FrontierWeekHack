@@ -164,7 +164,7 @@ class ResolutionAdvisorAgent:
     def __init__(self):
         self.agent = None
         self.client = None
-        self.instructions = ""
+        self.instructions = "**Write an empathetic two-sentence customer response. Do not promise a refund or offer unless the supplied policy allows it.**"
 
     def create(self):
         """Configure the resolution advisor agent for API-key calls."""
