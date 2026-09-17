@@ -74,7 +74,26 @@ From the **factory** folder, run the deploy script:
 bash challenge-0-setup/deploy.sh
 ```
 
-This will provision all resources **and** automatically write your `.env` file to the repository root as `.env`. The deployment will take a couple of minutes to complete.
+This will provision all resources **and** automatically write your `.env` file to the `factory` folder as `factory/.env`. The deployment will take a couple of minutes to complete.
+
+### Generate configuration for existing resources
+
+If the resources are already deployed and you need to regenerate `factory/.env`, use [generate-env.ps1](./generate-env.ps1). It only reads Azure resources; it does not deploy resources, change role assignments, or switch your active subscription. Requires PowerShell and Azure CLI, already signed in.
+
+From the **repository root**, run:
+
+```powershell
+.\factory\challenge-0-setup\generate-env.ps1 -ResourceGroup "<existing-resource-group>"
+```
+
+The script uses the current Azure CLI subscription and the `factory-project` project. It discovers the Foundry account, model deployment name, and Application Insights component within the specified resource group. It writes the endpoints, monitoring connection details, and tracing settings to `factory/.env`, which the challenge scripts load automatically.
+
+- Use `-SubscriptionId "<subscription-id>"` to read from another subscription.
+- Use `-FoundryResourceName`, `-ModelDeploymentName`, or `-AppInsightsName` to select a resource when multiple candidates exist. The script stops instead of guessing.
+- Use `-ProjectName` if your project has a different name, or `-OutputPath` to choose another output file.
+- Existing files are protected by default. Add `-Force` to replace the file, including custom settings such as `WORKFLOW_AGENT_NAME`. Azure lookup failures or missing required values leave the existing file unchanged.
+
+The script does not print connection details. Keep the generated file private; `.env` is already excluded from Git. This only restores local configuration; it does not repair missing Azure resources, monitoring connections, or permissions.
 
 ## Verify the creation of your resources
 
