@@ -29,7 +29,7 @@ You'll run two supplied agent roles:
 
 ## Prerequisites
 
-- VS Code and a stable Python 3.10 or newer, installed before the session
+- Either GitHub Codespaces in a browser (GitHub account, access, and usage allowance required), or local VS Code with stable Python 3.10 or newer
 - The workshop files and the API key supplied privately by the facilitator
 - A partner or facilitator to help with commands if needed
 

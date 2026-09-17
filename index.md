@@ -30,20 +30,38 @@ There are no portal exercises, deployments, shared dashboards, or formal evaluat
 
 ## Before the Session
 
+Choose **one** option; the exercises are the same in both.
+
+### Option A: GitHub Codespaces (Browser)
+
+1. Sign in to GitHub and open [the workshop repository](https://github.com/flo7up/FrontierWeekHack).
+2. Select **Code > Codespaces > Create codespace on main**. No personal fork is required.
+3. Wait for the build and automatic package installation to finish, then open **Terminal > New Terminal**.
+4. Follow the **GitHub Codespaces** commands in the guides. The browser workspace runs Linux with Python already installed, regardless of your laptop's operating system. No local Python or VS Code installation is needed.
+
+Check your GitHub account's Codespaces access and available usage before the workshop. Codespaces compute and storage are billed separately from Azure model usage. If unavailable, use local VS Code or pair with another participant.
+
+### Option B: Local VS Code
+
 - Install [VS Code](https://code.visualstudio.com/) and a stable [Python](https://www.python.org/downloads/) version 3.10 or newer; 3.12 is recommended.
 - Open [your workshop repository](https://github.com/flo7up/FrontierWeekHack), select **Code > Download ZIP**, and extract it. A GitHub account and Git are not needed for this route.
 - In VS Code, use **File > Open Folder** and select the extracted folder containing `requirements.txt` and `smoke_test.py`.
-- Obtain the workshop API key privately from the facilitator. The public templates already contain the endpoint and model name.
+
+For either option, obtain the workshop API key privately from the facilitator. The public templates already contain the endpoint and model name.
 
 You do **not** need an Azure subscription, Azure CLI, or access to the Microsoft Foundry portal. All participant exercises use a shared model through its API key.
 
-Python runs on your laptop, but model requests send prompts and sample data to the shared cloud service. Use only the fictional workshop data, not real customer or company information. Keep the key in your local `.env`, never in chat, an AI assistant, screenshots, or the public template.
+Python runs on your laptop or in your Codespace; model requests send prompts and sample data to the shared cloud service. Use only the fictional workshop data, not real customer or company information. Keep the key in the scenario's private `.env`, never in chat, an AI assistant, screenshots, or the public template. A laptop `.env` is not automatically transferred into Codespaces.
 
 ## Getting Started
 
 1. Open your chosen scenario and complete **Connect > Build Agents > Local Workflow** in order.
-2. Keep the terminal at the main workshop folder throughout. Choose only the commands for your operating system.
+2. Keep the terminal at the main workshop folder throughout. Choose **GitHub Codespaces** commands for the browser workspace, or the appropriate local commands for your computer.
 3. Run each example once, inspect the output, then try one optional change. Different wording on repeated runs is normal.
 4. Ask for help or pair with someone if setup blocks you. Do not spend the workshop changing device security settings.
 
 **Success is understanding, not typing speed:** explain an agent's job, identify facts supplied by a tool, and name one answer you would not trust without human review. Editing code is optional.
+
+## After the Session
+
+Stop scripts and remove the private key when finished. In [Your Codespaces](https://github.com/codespaces), choose **... > Stop codespace** for your workspace; closing the tab is not an immediate stop. Delete it when no longer needed, after keeping any non-secret work, to avoid continued storage usage.

@@ -6,15 +6,21 @@ Time: 55 minutes, including review and an optional experiment.
 
 ## 1. Run the Combined Example
 
-Finish [Build Agents](../challenge-1-build/README.md) first. Keep the terminal in the main workshop folder, not inside a scenario folder. Use one command for your operating system.
+Finish [Build Agents](../challenge-1-build/README.md) first. Keep the terminal in the main workshop folder, not inside a scenario folder. Choose **GitHub Codespaces** for the browser workspace, regardless of your laptop's operating system; otherwise use the appropriate **Local** command.
 
-### Windows PowerShell
+### GitHub Codespaces
+
+```bash
+python callcenter/challenge-2-workflow/deploy.py
+```
+
+### Local Windows PowerShell
 
 ```powershell
 .\.venv\Scripts\python.exe callcenter/challenge-2-workflow/deploy.py
 ```
 
-### macOS or Linux
+### Local macOS or Linux
 
 ```bash
 ./.venv/bin/python callcenter/challenge-2-workflow/deploy.py

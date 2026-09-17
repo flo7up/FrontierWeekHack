@@ -18,9 +18,9 @@ The exercises use independent Responses API calls and do not create shared agent
 
 ## Values to Distribute
 
-The public `workshop.env.template` files already contain the shared endpoint and model deployment name. These are configuration, not credentials; they do not grant access. Keep them current across all three scenarios if you change the deployment.
+Each scenario folder contains a public `.env.template` with the shared endpoint and model deployment name. Each setup folder also retains `workshop.env.template` for website downloads. These are configuration, not credentials; they do not grant access. Keep both template versions current across all three scenarios if you change the deployment.
 
-Send only the workshop API key through a private channel shortly before the workshop. Participants copy the template to their scenario's `.env` and replace `XXX` locally:
+Send only the workshop API key through a private channel shortly before the workshop. Participants rename their scenario's `.env.template` to `.env`, then copy and paste the key over `XXX`. Do not overwrite an existing `.env`, put a real key in a tracked template, or commit the local template deletion:
 
 ```dotenv
 API_KEY=XXX
@@ -30,20 +30,26 @@ Mask the entire key in public examples, not just a few characters. Use a seconda
 
 ## Preflight
 
-1. Send the [workshop link](https://flo7up.github.io/FrontierWeekHack/) and software checklist before the day. Ask participants to install VS Code and stable Python, or arrange a prepared partner laptop.
-2. Test the ZIP download and open-folder route from [README.md](./README.md), not only an existing developer checkout. There is no Git or Azure CLI requirement.
-3. Follow Connect and run each scenario's connection test with the same explicit `.venv` commands participants will use. Never project the open key file.
+1. Send the [workshop link](https://flo7up.github.io/FrontierWeekHack/) and ask participants to choose **Codespaces in a browser** or **local VS Code**. Codespaces users need a GitHub account with access and available usage; local users need VS Code and stable Python installed. Arrange partner work if either route is unavailable.
+2. Test a fresh Codespace through **Code > Codespaces > Create codespace on main**, and test the ZIP download/local route from [README.md](./README.md). Do not assume a local test verifies the container build. Allow time before the session for first-time container creation and automatic dependency installation.
+3. Follow Connect and run each scenario's connection test with the matching commands: `python` in Codespaces, explicit `.venv` Python locally. The current container installs packages automatically but does not create `.venv`. Never project the open key file.
 4. Run both exercises in each scenario before the workshop. Save one example output without credentials for an offline demonstration. Review unsupported claims as teaching examples, not necessarily software failures.
 5. Check that the three template endpoints/models are current and that credits, authentication, and deployment capacity are sufficient. Rotate any previously exposed key before distribution.
 6. Run the offline checks below. They use dummy data and mocked network responses, not the real key.
 
-### Windows PowerShell
+### GitHub Codespaces
+
+```bash
+python -m unittest test_workshop -v
+```
+
+### Local Windows PowerShell
 
 ```powershell
 .\.venv\Scripts\python.exe -m unittest test_workshop -v
 ```
 
-### macOS or Linux
+### Local macOS or Linux
 
 ```bash
 ./.venv/bin/python -m unittest test_workshop -v
@@ -63,6 +69,7 @@ Ask each participant to choose one scenario. Running all three is not expected.
 
 ## Pacing and Fallback
 
+- Confirm Codespaces usage/billing arrangements before the day. Its compute and storage are separate from Azure model credits; do not promise free or unlimited access. Local VS Code remains an equal alternative.
 - At 20 minutes, everyone should have `WORKSHOP_READY` or be paired with someone who does. Do not let one installation consume the session.
 - In Build, spend roughly 20 minutes running and reading, 20 explaining roles/tools, 20 on an optional prompt edit, and 10 comparing observations.
 - In Workflow, spend roughly 15 minutes running, 15 following the selection rule, 15 on an optional edit, and 10 reviewing limitations.
@@ -81,6 +88,8 @@ Ask each participant to choose one scenario. Running all three is not expected.
 
 ## During the Workshop
 
+- For browser users, all commands run in the Linux Codespace terminal, even on Windows laptops. Skip local installs and activation. If container setup fails, inspect the creation log; for missing packages after setup, retry `python -m pip install --user -r requirements.txt` from the repository root.
+- The `.env` belongs in the chosen scenario folder inside each workspace. A laptop copy is not automatically available in a Codespace. Use rename-and-paste there, or privately supply a file for upload; never put it in the public repository or container configuration.
 - Stagger the first full workflow run by a few seconds if everyone reaches it together.
 - If a participant receives HTTP 429, wait one minute and retry once; investigate persistent errors centrally.
 - Remind participants that the API key identifies the shared resource, not an individual user.
@@ -90,6 +99,8 @@ Ask each participant to choose one scenario. Running all three is not expected.
 ## Close the Session
 
 Stop all runs, rotate the distributed key, check usage, and have participants remove the key from their local configuration. There are no participant-created Azure resources to delete. Each group should share one useful result, one limitation, and one human check it would require before real use.
+
+Codespaces users must also stop their workspaces at [Your Codespaces](https://github.com/codespaces) using **... > Stop codespace**. Closing the browser does not immediately stop compute. Delete unneeded Codespaces after keeping non-secret work to avoid continued storage usage. Removing or stopping a Codespace does not revoke the model key; rotate it separately.
 
 ## Topics for the Debrief
 

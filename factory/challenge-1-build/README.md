@@ -40,15 +40,21 @@ The tool calculates which readings exceed limits. The model explains those resul
 
 ## 1. Run the Supplied Example
 
-Complete [Connect](../challenge-0-setup/README.md) first. Keep the terminal in the main workshop folder. Use the command for your operating system; do not change folders.
+Complete [Connect](../challenge-0-setup/README.md) first. Keep the terminal in the main workshop folder; do not change folders. Choose **GitHub Codespaces** if using the browser workspace, regardless of your laptop's operating system. Otherwise use the appropriate **Local** command.
 
-### Windows PowerShell
+### GitHub Codespaces
+
+```bash
+python factory/challenge-1-build/agents.py
+```
+
+### Local Windows PowerShell
 
 ```powershell
 .\.venv\Scripts\python.exe factory/challenge-1-build/agents.py
 ```
 
-### macOS or Linux
+### Local macOS or Linux
 
 ```bash
 ./.venv/bin/python factory/challenge-1-build/agents.py
