@@ -5,7 +5,7 @@ Enable GenAI tracing and verify traces appear in App Insights.
 Usage:
     python monitor.py
 
-IMPORTANT: Environment variables must be set BEFORE importing azure.ai.projects!
+IMPORTANT: Environment variables must be loaded before configuring telemetry.
 """
 
 import os
@@ -23,7 +23,12 @@ def _find_repo_root() -> Path:
     return Path(__file__).resolve().parents[2]
 
 
-env_path = _find_repo_root() / ".env"
+REPO_ROOT = _find_repo_root()
+sys.path.insert(0, str(REPO_ROOT.parent))
+
+from foundry_api import create_foundry_client
+
+env_path = REPO_ROOT / ".env"
 load_dotenv(env_path)
 
 # Verify tracing is enabled
@@ -32,7 +37,8 @@ if os.getenv("AZURE_EXPERIMENTAL_ENABLE_GENAI_TRACING") != "true":
     print("   Add: AZURE_EXPERIMENTAL_ENABLE_GENAI_TRACING=true")
     sys.exit(1)
 
-PROJECT_CONNECTION_STRING = os.getenv("PROJECT_CONNECTION_STRING")
+FOUNDRY_ENDPOINT = os.getenv("FOUNDRY_ENDPOINT")
+API_KEY = os.getenv("API_KEY")
 MODEL_DEPLOYMENT_NAME = os.getenv("MODEL_DEPLOYMENT_NAME", "gpt-5.4")
 APPINSIGHTS_CONN_STRING = os.getenv("APPLICATIONINSIGHTS_CONNECTION_STRING")
 
@@ -42,59 +48,42 @@ def setup_tracing():
     print("=== Setting up tracing ===")
     print("✅ AZURE_EXPERIMENTAL_ENABLE_GENAI_TRACING is enabled")
 
-    from azure.ai.projects.telemetry import AIProjectInstrumentor
-    AIProjectInstrumentor().instrument()
-    print("✅ AIProjectInstrumentor configured")
-
     from azure.monitor.opentelemetry import configure_azure_monitor
+    from opentelemetry import trace
+
     configure_azure_monitor(
         connection_string=APPINSIGHTS_CONN_STRING,
         enable_live_metrics=True,
     )
     print("✅ Azure Monitor exporter connected")
+    return trace.get_tracer("foundry-hackathon")
 
 
-def run_traced_agent_call():
+def run_traced_agent_call(tracer):
     """Make an agent call that will be captured as a trace."""
     print("\n=== Running traced agent call ===")
 
-    from azure.ai.projects import AIProjectClient
-    from azure.ai.projects.models import PromptAgentDefinition
-    from azure.identity import DefaultAzureCredential
+    client = create_foundry_client()
 
-    client = AIProjectClient(
-        endpoint=PROJECT_CONNECTION_STRING,
-        credential=DefaultAzureCredential(),
-    )
-    openai_client = client.get_openai_client()
-
-    agent = client.agents.create_version(
-        agent_name="tracing-test-agent",
-        definition=PromptAgentDefinition(
+    with tracer.start_as_current_span("foundry.responses.create") as span:
+        span.set_attribute("gen_ai.system", "openai")
+        span.set_attribute("gen_ai.request.model", MODEL_DEPLOYMENT_NAME)
+        response = client.responses.create(
             model=MODEL_DEPLOYMENT_NAME,
             instructions=(
                 "You are a claims operations assistant for ClaimSight Insurance. "
                 "Summarize triage risk and recommended decisions for claim batches."
             ),
-        ),
-    )
-
-    conversation = openai_client.conversations.create()
-    response = openai_client.responses.create(
-        input=(
-            "Assess this claim batch and return decision urgency guidance.\n"
-            "domain: ClaimSight Insurance\n"
-            "claims: CLM-001 INVESTIGATE IMMEDIATE, CLM-003 REQUEST DOCUMENTS WITHIN 48H, CLM-005 INVESTIGATE STANDARD\n"
-            "tool_reference: assess_claim"
-        ),
-        conversation=conversation.id,
-        extra_body={"agent_reference": {"name": agent.name, "type": "agent_reference"}},
-    )
+            input=(
+                "Assess this claim batch and return decision urgency guidance.\n"
+                "domain: ClaimSight Insurance\n"
+                "claims: CLM-001 INVESTIGATE IMMEDIATE, CLM-003 REQUEST DOCUMENTS WITHIN 48H, CLM-005 INVESTIGATE STANDARD\n"
+                "tool_reference: assess_claim"
+            ),
+        )
+        span.set_attribute("gen_ai.response.id", response.id)
     print(f"✅ Agent responded: {response.output_text[:100]}...")
 
-    # Cleanup
-    openai_client.conversations.delete(conversation_id=conversation.id)
-    client.agents.delete_version(agent_name=agent.name, agent_version=agent.version)
     client.close()
 
 
@@ -116,12 +105,12 @@ def verify_traces():
 
 
 def main():
-    if not PROJECT_CONNECTION_STRING:
-        print("❌ PROJECT_CONNECTION_STRING not set. Run challenge 0 first!")
+    if not FOUNDRY_ENDPOINT or not API_KEY:
+        print("❌ FOUNDRY_ENDPOINT and API_KEY must be set in .env")
         sys.exit(1)
 
-    setup_tracing()
-    run_traced_agent_call()
+    tracer = setup_tracing()
+    run_traced_agent_call(tracer)
     verify_traces()
 
     print("\n🎉 Monitoring is active! Check App Insights for the full trace view.")

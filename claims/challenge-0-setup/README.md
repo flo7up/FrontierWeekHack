@@ -24,6 +24,12 @@ By the end of this challenge, you will have:
 
 There are two ways to get started — pick one:
 
+### Use an existing resource without Azure CLI
+
+If a Foundry resource and model deployment have already been provided, no Azure login is needed to run Challenges 1–4. Copy [`.env.template`](./.env.template) to `claims/.env` and set `FOUNDRY_ENDPOINT`, `MODEL_DEPLOYMENT_NAME`, and `API_KEY`. Set the Application Insights connection string as well to complete Challenge 2. Skip infrastructure deployment below.
+
+The resource API key authorizes model data-plane calls only. It cannot provision Azure resources or create persistent Foundry project agents and workflows.
+
 > **First step for both options:** [Fork this repository](https://github.com/microsoft/FrontierWeekHack/fork) to your own GitHub account.
 
 ### Option A: GitHub Codespaces (recommended)

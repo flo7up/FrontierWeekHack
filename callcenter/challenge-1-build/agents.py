@@ -14,10 +14,6 @@ import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
-from azure.ai.projects import AIProjectClient
-from azure.ai.projects.models import FunctionTool, PromptAgentDefinition
-from azure.identity import DefaultAzureCredential
-from openai.types.responses.response_input_param import FunctionCallOutput
 
 
 # Resolve repo root by finding .env in parent directories.
@@ -29,12 +25,16 @@ def _find_repo_root() -> Path:
 
 
 REPO_ROOT = _find_repo_root()
+sys.path.insert(0, str(REPO_ROOT.parent))
+
+from foundry_api import ApiKeyAgent, create_foundry_client, run_agent_response
 
 # Load environment
 env_path = REPO_ROOT / ".env"
 load_dotenv(env_path)
 
-PROJECT_CONNECTION_STRING = os.getenv("PROJECT_CONNECTION_STRING")
+FOUNDRY_ENDPOINT = os.getenv("FOUNDRY_ENDPOINT")
+API_KEY = os.getenv("API_KEY")
 MODEL_DEPLOYMENT_NAME = os.getenv("MODEL_DEPLOYMENT_NAME", "gpt-5.4")
 CALL_DATA_PATH = Path(__file__).resolve().parent / "call_data.json"
 
@@ -82,11 +82,12 @@ def lookup_customer(call_id: str) -> str:
     }, indent=2)
 
 
-# Tool definition for the agent (Foundry FunctionTool format)
-LOOKUP_CUSTOMER_TOOL = FunctionTool(
-    name="lookup_customer",
-    description="Look up customer and call details by call ID (e.g., 'CALL-001') or customer ID (e.g., 'CUST-4421'). Returns account tier, tenure, call summary, transcript, and interaction history.",
-    parameters={
+# Tool definition for the OpenAI Responses API
+LOOKUP_CUSTOMER_TOOL = {
+    "type": "function",
+    "name": "lookup_customer",
+    "description": "Look up customer and call details by call ID (e.g., 'CALL-001') or customer ID (e.g., 'CUST-4421'). Returns account tier, tenure, call summary, transcript, and interaction history.",
+    "parameters": {
         "type": "object",
         "properties": {
             "call_id": {
@@ -97,8 +98,8 @@ LOOKUP_CUSTOMER_TOOL = FunctionTool(
         "required": ["call_id"],
         "additionalProperties": False,
     },
-    strict=False,
-)
+    "strict": False,
+}
 
 
 # =============================================================================
@@ -109,17 +110,13 @@ class IntentClassificationAgent:
     def __init__(self):
         self.agent = None
         self.client = None
-        self.openai = None
+        self.instructions = ""
 
     def create(self):
-        """Create the intent classification agent in Foundry."""
-        self.client = AIProjectClient(
-            endpoint=PROJECT_CONNECTION_STRING,
-            credential=DefaultAzureCredential(),
-        )
-        self.openai = self.client.get_openai_client()
+        """Configure the intent classification agent for API-key calls."""
+        self.client = create_foundry_client()
 
-        system_prompt = """
+        self.instructions = """
         You are a call center intent classification specialist for NovaTel Communications.
         When asked to classify calls, use the lookup_customer tool to retrieve call details.
         For each call, determine:
@@ -138,65 +135,23 @@ class IntentClassificationAgent:
         Use 🔴 for critical, ⚠️ for high, and ✅ for low-risk items.
         """
 
-        self.agent = self.client.agents.create_version(
-            agent_name="intent-classification-agent",
-            definition=PromptAgentDefinition(
-                model=MODEL_DEPLOYMENT_NAME,
-                instructions=system_prompt,
-                tools=[LOOKUP_CUSTOMER_TOOL],
-            ),
-        )
+        self.agent = ApiKeyAgent(name="intent-classification-agent")
 
         return self.agent
 
     def run(self, input_text: str) -> str:
         """Run the intent classification agent with the given input."""
-        conversation = self.openai.conversations.create()
-
-        response = self.openai.responses.create(
-            input=input_text,
-            conversation=conversation.id,
-            extra_body={"agent_reference": {"name": self.agent.name, "type": "agent_reference"}},
+        return run_agent_response(
+            self.client,
+            model=MODEL_DEPLOYMENT_NAME,
+            instructions=self.instructions,
+            input_text=input_text,
+            tools=[LOOKUP_CUSTOMER_TOOL],
+            tool_handlers={"lookup_customer": lookup_customer},
         )
 
-        # Handle function call loops
-        while True:
-            function_calls = [item for item in response.output if item.type == "function_call"]
-            if not function_calls:
-                break
-
-            input_list = []
-            for item in function_calls:
-                if item.name == "lookup_customer":
-                    args = json.loads(item.arguments)
-                    result = lookup_customer(args["call_id"])
-                else:
-                    result = json.dumps({"error": f"Unknown tool '{item.name}'"})
-
-                input_list.append(
-                    FunctionCallOutput(
-                        type="function_call_output",
-                        call_id=item.call_id,
-                        output=result,
-                    )
-                )
-
-            response = self.openai.responses.create(
-                input=input_list,
-                conversation=conversation.id,
-                extra_body={"agent_reference": {"name": self.agent.name, "type": "agent_reference"}},
-            )
-
-        self.openai.conversations.delete(conversation_id=conversation.id)
-        return response.output_text
-
     def cleanup(self):
-        """Delete the agent version and close connections."""
-        if self.agent:
-            self.client.agents.delete_version(
-                agent_name=self.agent.name,
-                agent_version=self.agent.version,
-            )
+        """Close the API client."""
         if self.client:
             self.client.close()
 
@@ -209,17 +164,13 @@ class ResolutionAdvisorAgent:
     def __init__(self):
         self.agent = None
         self.client = None
-        self.openai = None
+        self.instructions = ""
 
     def create(self):
-        """Create the resolution advisor agent in Foundry."""
-        self.client = AIProjectClient(
-            endpoint=PROJECT_CONNECTION_STRING,
-            credential=DefaultAzureCredential(),
-        )
-        self.openai = self.client.get_openai_client()
+        """Configure the resolution advisor agent for API-key calls."""
+        self.client = create_foundry_client()
 
-        system_prompt = """
+        self.instructions = """
         You are a resolution strategy expert for NovaTel Communications call center.
         Given a classified call intent and customer context, recommend the optimal resolution path.
 
@@ -247,36 +198,21 @@ class ResolutionAdvisorAgent:
         Be concise and actionable. Format clearly with headers.
         """
 
-        self.agent = self.client.agents.create_version(
-            agent_name="resolution-advisor-agent",
-            definition=PromptAgentDefinition(
-                model=MODEL_DEPLOYMENT_NAME,
-                instructions=system_prompt,
-            ),
-        )
+        self.agent = ApiKeyAgent(name="resolution-advisor-agent")
 
         return self.agent
 
     def run(self, input_text: str) -> str:
         """Run the resolution advisor agent with the given input."""
-        conversation = self.openai.conversations.create()
-
-        response = self.openai.responses.create(
-            input=input_text,
-            conversation=conversation.id,
-            extra_body={"agent_reference": {"name": self.agent.name, "type": "agent_reference"}},
+        return run_agent_response(
+            self.client,
+            model=MODEL_DEPLOYMENT_NAME,
+            instructions=self.instructions,
+            input_text=input_text,
         )
 
-        self.openai.conversations.delete(conversation_id=conversation.id)
-        return response.output_text
-
     def cleanup(self):
-        """Delete the agent version and close connections."""
-        if self.agent:
-            self.client.agents.delete_version(
-                agent_name=self.agent.name,
-                agent_version=self.agent.version,
-            )
+        """Close the API client."""
         if self.client:
             self.client.close()
 
@@ -286,16 +222,16 @@ class ResolutionAdvisorAgent:
 # =============================================================================
 
 def main():
-    if not PROJECT_CONNECTION_STRING:
-        print("❌ PROJECT_CONNECTION_STRING not set. Run challenge 0 first!")
+    if not FOUNDRY_ENDPOINT or not API_KEY:
+        print("❌ FOUNDRY_ENDPOINT and API_KEY must be set in .env")
         sys.exit(1)
 
     print("=== Intent Classification Agent ===")
-    print("Creating agent...")
+    print("Configuring agent...")
 
     intent_agent = IntentClassificationAgent()
     intent_agent.create()
-    print(f"✅ Created: {intent_agent.agent.name} (version {intent_agent.agent.version})")
+    print(f"✅ Configured: {intent_agent.agent.name} (API key)")
 
     print("\nClassifying all incoming calls...")
     call_batch = _load_call_batch()
@@ -310,11 +246,11 @@ def main():
     print(intent_result)
 
     print("\n=== Resolution Advisor Agent ===")
-    print("Creating agent...")
+    print("Configuring agent...")
 
     resolution_agent = ResolutionAdvisorAgent()
     resolution_agent.create()
-    print(f"✅ Created: {resolution_agent.agent.name} (version {resolution_agent.agent.version})")
+    print(f"✅ Configured: {resolution_agent.agent.name} (API key)")
 
     print("\nAdvising on high-priority batch of calls...")
     high_priority_batch = [
@@ -328,11 +264,8 @@ def main():
     )
     print(resolution_result)
 
-    # Cleanup — comment out to keep agents visible in the Foundry portal
-    # print("\nCleaning up agents...")
-    # intent_agent.cleanup()
-    # resolution_agent.cleanup()
-    # print("✅ Done!")
+    intent_agent.cleanup()
+    resolution_agent.cleanup()
 
 
 if __name__ == "__main__":

@@ -27,11 +27,11 @@ You'll build two agents:
 
 ## Prerequisites
 
-- **Azure subscription** with Contributor access
+- Access to a pre-provisioned Microsoft Foundry resource and model deployment
 - **Python 3.10+** installed locally
-- **Azure CLI** (`az`) installed and logged in (`az login`)
+- A Foundry resource API key
 - A terminal (bash, PowerShell, or WSL)
-- ~20 minutes for infrastructure provisioning (run `challenge-0-setup/deploy.sh` from the repo root first!)
+- Optional: Azure CLI and Contributor access only when provisioning new infrastructure
 
 ## Structure
 

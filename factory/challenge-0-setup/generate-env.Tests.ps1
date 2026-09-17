@@ -55,6 +55,11 @@ function az {
             if ($testState.Scenario -eq 'missing-endpoint') { $endpoint = $null }
             $result = @{ properties = @{ endpoints = @{ 'AI Foundry API' = $endpoint } } }
         }
+        'cognitiveservices account keys list *' {
+            $key = 'foundry-api-key'
+            if ($testState.Scenario -eq 'missing-api-key') { $key = $null }
+            $result = @{ key1 = $key }
+        }
         'cognitiveservices account deployment list *' {
             $result = @(@{ name = 'custom-model'; properties = @{ provisioningState = 'Succeeded' } })
             if ($testState.Scenario -eq 'failed-model') { $result[0].properties.provisioningState = 'Failed' }
@@ -88,6 +93,7 @@ try {
         'FOUNDRY_ENDPOINT="https://existing-foundry.cognitiveservices.azure.com/"'
         'PROJECT_CONNECTION_STRING="https://existing-foundry.services.ai.azure.com/api/projects/factory-project"'
         'MODEL_DEPLOYMENT_NAME="custom-model"'
+        'API_KEY="foundry-api-key"'
         'APPLICATIONINSIGHTS_CONNECTION_STRING="InstrumentationKey=test-key;IngestionEndpoint=https://example.test/"'
         'APPINSIGHTS_INSTRUMENTATION_KEY="test-key"'
         'AZURE_EXPERIMENTAL_ENABLE_GENAI_TRACING="true"'
@@ -96,7 +102,7 @@ try {
     $actual = [System.IO.File]::ReadAllLines($outputPath)
     Assert-True (@(Compare-Object $expected $actual).Count -eq 0) 'Generated settings do not match the deployment contract.'
     Assert-True ([System.IO.File]::ReadAllBytes($outputPath)[0] -eq 65) 'Output must be UTF-8 without a BOM.'
-    Assert-True (($messages -join "`n") -notmatch 'test-key') 'Connection details leaked to output.'
+    Assert-True (($messages -join "`n") -notmatch 'test-key|foundry-api-key') 'Connection details leaked to output.'
     Assert-True (($testState.Calls[0] -join ' ') -like '*--subscription requested-subscription*') 'Explicit subscription was not used.'
     foreach ($call in ($testState.Calls | Select-Object -Skip 1)) {
         Assert-True (($call -join ' ') -like '*--subscription resolved-subscription*') 'A resource read was not scoped to the resolved subscription.'
@@ -120,6 +126,7 @@ try {
         @{ Scenario = 'multiple-insights'; Message = '*AppInsightsName*' }
         @{ Scenario = 'failed-model'; Message = '*model deployment has not successfully provisioned*' }
         @{ Scenario = 'missing-endpoint'; Message = '*PROJECT_CONNECTION_STRING*' }
+        @{ Scenario = 'missing-api-key'; Message = '*API_KEY*' }
         @{ Scenario = 'missing-insights'; Message = '*APPLICATIONINSIGHTS_CONNECTION_STRING*' }
     )
     foreach ($failureCase in $failureCases) {

@@ -23,23 +23,23 @@ Check out [call_data.json](./call_data.json) to see today's incoming calls.
 
 ## Portal or SDK?
 
-Microsoft Foundry gives you two ways to build agents. The **Foundry portal** ([ai.azure.com/nextgen](https://ai.azure.com/nextgen)) provides a visual, no-code interface where you can create agents, attach tools, and test them interactively in a playground — great for exploration and rapid prototyping. The **Azure AI Agents SDK** gives you full programmatic control: you define agent behavior, tools, and orchestration logic in Python, which makes it easy to version, test, and integrate into automated pipelines.
+Microsoft Foundry supports portal-hosted agents and direct model calls. This lab uses the **OpenAI Responses API** with the Foundry resource endpoint and `API_KEY`, so no Azure CLI login or `DefaultAzureCredential` is required at runtime.
 
 ![foundry](./images/foundry.png)
 
-In this challenge we use the **SDK**. The code in [agents.py](./agents.py) creates both agents, registers their tools, and runs them against every call in `call_data.json` — all from the terminal. After the script runs, both agents will also be visible in the portal under **Agents**, so you can inspect them, tweak their instructions, and test them interactively without touching any code.
+The code in [agents.py](./agents.py) configures two local agent roles, registers their tools, and runs them against every call in `call_data.json`. API-key roles are created for each run and do not appear as persistent assets in the Foundry portal.
 
 ## Agents and Tools
 
 ### What is an agent?
 
-An agent in Microsoft Foundry is a persistent, stateful AI assistant backed by a large language model. Unlike a plain API call — where you send a prompt and get a single response — an agent maintains a **conversation thread**, can **invoke tools autonomously**, and **retains context** across multiple turns. You configure it with:
+In this lab, an agent is a model call configured with instructions and optional tools. The Responses API can invoke tools autonomously and continue the response after your Python code returns each tool result. You configure it with:
 
 - A **name** and **model** (e.g. `gpt-5.4`)
 - A **system prompt** — instructions that define its role, personality, and constraints
 - One or more **tools** it can call when it needs information or actions beyond its training data
 
-Agents are managed resources in your Foundry project. They persist between runs, appear in the portal under **Agents**, and can be versioned, shared, and reused.
+These API-key agents are local configurations, not managed project resources. Persistent portal agents require Entra authentication.
 
 ### What are tools?
 
@@ -82,7 +82,7 @@ cd callcenter/challenge-1-build
 python agents.py
 ```
 
-As the script runs, watch the terminal closely — you'll see each agent being created, then each call from `call_data.json` being sent through the **Intent Classification Agent** first, and its output handed off to the **Resolution Advisor Agent**. You'll see the raw agent responses printed for every call, giving you a live view of how the two agents collaborate. Once it completes, head to the [Microsoft Foundry portal](https://ai.azure.com/nextgen), open your project, and navigate to **Agents** in the left sidebar — hit **Refresh** if the agents don't appear immediately, as it can take a few seconds for newly created agents to show up in the portal.
+As the script runs, each call from `call_data.json` is processed by the **Intent Classification Agent** role first, and the high-priority batch is then processed by the **Resolution Advisor Agent** role. The raw responses are printed in the terminal.
 
 
 ## Success Criteria

@@ -116,8 +116,9 @@ DISABLE_LOCAL_AUTH=$(az cognitiveservices account show \
     --query properties.disableLocalAuth -o tsv)
 
 if [ "$DISABLE_LOCAL_AUTH" = "true" ]; then
-    echo "⚠️  API key authentication is disabled by Azure Policy on this tenant."
-    echo "   The deployment will continue — use DefaultAzureCredential (Entra ID) in your code."
+    echo "❌ API key authentication is disabled by Azure Policy on this tenant."
+    echo "   These challenges require local authentication to be enabled."
+    exit 1
 fi
 
 echo ">>> Creating Microsoft Foundry project..."
@@ -207,6 +208,11 @@ PROJECT_CONNECTION_STRING=$(az cognitiveservices account project show \
     --project-name "$PROJECT_NAME" \
     --query "properties.endpoints.\"AI Foundry API\"" -o tsv)
 
+API_KEY=$(az cognitiveservices account keys list \
+    --name "$FOUNDRY_RESOURCE_NAME" \
+    --resource-group "$RESOURCE_GROUP" \
+    --query key1 -o tsv)
+
 # --- Write .env file ----------------------------------------------------------
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -230,6 +236,7 @@ PROJECT_NAME=$PROJECT_NAME
 FOUNDRY_ENDPOINT=$FOUNDRY_ENDPOINT
 PROJECT_CONNECTION_STRING=$PROJECT_CONNECTION_STRING
 MODEL_DEPLOYMENT_NAME=$MODEL_DEPLOYMENT_NAME
+API_KEY=$API_KEY
 
 # Application Insights & Monitoring
 APPLICATIONINSIGHTS_CONNECTION_STRING=$APP_INSIGHTS_CONN_STRING

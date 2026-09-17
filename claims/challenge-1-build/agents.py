@@ -14,10 +14,6 @@ import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
-from azure.ai.projects import AIProjectClient
-from azure.ai.projects.models import FunctionTool, PromptAgentDefinition
-from azure.identity import DefaultAzureCredential
-from openai.types.responses.response_input_param import FunctionCallOutput
 
 
 # Resolve repo root by finding .env in parent directories.
@@ -29,12 +25,16 @@ def _find_repo_root() -> Path:
 
 
 REPO_ROOT = _find_repo_root()
+sys.path.insert(0, str(REPO_ROOT.parent))
+
+from foundry_api import ApiKeyAgent, create_foundry_client, run_agent_response
 
 # Load environment
 env_path = REPO_ROOT / ".env"
 load_dotenv(env_path)
 
-PROJECT_CONNECTION_STRING = os.getenv("PROJECT_CONNECTION_STRING")
+FOUNDRY_ENDPOINT = os.getenv("FOUNDRY_ENDPOINT")
+API_KEY = os.getenv("API_KEY")
 MODEL_DEPLOYMENT_NAME = os.getenv("MODEL_DEPLOYMENT_NAME", "gpt-5.4")
 CLAIMS_DATA_PATH = Path(__file__).resolve().parent / "claims_data.json"
 
@@ -113,11 +113,12 @@ def assess_claim(claim_id: str) -> str:
     return json.dumps(results, indent=2)
 
 
-# Tool definition for the agent (Foundry FunctionTool format)
-ASSESS_CLAIM_TOOL = FunctionTool(
-    name="assess_claim",
-    description="Assess an insurance claim's metrics against acceptable thresholds. Returns flags if any metrics are outside acceptable ranges (completeness too low, fraud risk too high, etc.).",
-    parameters={
+# Tool definition for the OpenAI Responses API
+ASSESS_CLAIM_TOOL = {
+    "type": "function",
+    "name": "assess_claim",
+    "description": "Assess an insurance claim's metrics against acceptable thresholds. Returns flags if any metrics are outside acceptable ranges (completeness too low, fraud risk too high, etc.).",
+    "parameters": {
         "type": "object",
         "properties": {
             "claim_id": {
@@ -128,8 +129,8 @@ ASSESS_CLAIM_TOOL = FunctionTool(
         "required": ["claim_id"],
         "additionalProperties": False,
     },
-    strict=False,
-)
+    "strict": False,
+}
 
 
 # =============================================================================
@@ -140,17 +141,13 @@ class ClaimsTriageAgent:
     def __init__(self):
         self.agent = None
         self.client = None
-        self.openai = None
+        self.instructions = ""
 
     def create(self):
-        """Create the claims triage agent in Foundry."""
-        self.client = AIProjectClient(
-            endpoint=PROJECT_CONNECTION_STRING,
-            credential=DefaultAzureCredential(),
-        )
-        self.openai = self.client.get_openai_client()
+        """Configure the claims triage agent for API-key calls."""
+        self.client = create_foundry_client()
 
-        system_prompt = """
+        self.instructions = """
         You are an insurance claims triage specialist for ClaimSight Insurance.
         When asked to assess claims, use the assess_claim tool for each claim.
         For each claim, report:
@@ -163,65 +160,23 @@ class ClaimsTriageAgent:
         Be concise and structured.
         """
 
-        self.agent = self.client.agents.create_version(
-            agent_name="claims-triage-agent",
-            definition=PromptAgentDefinition(
-                model=MODEL_DEPLOYMENT_NAME,
-                instructions=system_prompt,
-                tools=[ASSESS_CLAIM_TOOL],
-            ),
-        )
+        self.agent = ApiKeyAgent(name="claims-triage-agent")
 
         return self.agent
 
     def run(self, input_text: str) -> str:
         """Run the claims triage agent with the given input."""
-        conversation = self.openai.conversations.create()
-
-        response = self.openai.responses.create(
-            input=input_text,
-            conversation=conversation.id,
-            extra_body={"agent_reference": {"name": self.agent.name, "type": "agent_reference"}},
+        return run_agent_response(
+            self.client,
+            model=MODEL_DEPLOYMENT_NAME,
+            instructions=self.instructions,
+            input_text=input_text,
+            tools=[ASSESS_CLAIM_TOOL],
+            tool_handlers={"assess_claim": assess_claim},
         )
 
-        # Handle function call loops
-        while True:
-            function_calls = [item for item in response.output if item.type == "function_call"]
-            if not function_calls:
-                break
-
-            input_list = []
-            for item in function_calls:
-                if item.name == "assess_claim":
-                    args = json.loads(item.arguments)
-                    result = assess_claim(args["claim_id"])
-                else:
-                    result = json.dumps({"error": f"Unknown tool '{item.name}'"})
-
-                input_list.append(
-                    FunctionCallOutput(
-                        type="function_call_output",
-                        call_id=item.call_id,
-                        output=result,
-                    )
-                )
-
-            response = self.openai.responses.create(
-                input=input_list,
-                conversation=conversation.id,
-                extra_body={"agent_reference": {"name": self.agent.name, "type": "agent_reference"}},
-            )
-
-        self.openai.conversations.delete(conversation_id=conversation.id)
-        return response.output_text
-
     def cleanup(self):
-        """Delete the agent version and close connections."""
-        if self.agent:
-            self.client.agents.delete_version(
-                agent_name=self.agent.name,
-                agent_version=self.agent.version,
-            )
+        """Close the API client."""
         if self.client:
             self.client.close()
 
@@ -234,17 +189,13 @@ class ClaimsDecisionAgent:
     def __init__(self):
         self.agent = None
         self.client = None
-        self.openai = None
+        self.instructions = ""
 
     def create(self):
-        """Create the claims decision agent in Foundry."""
-        self.client = AIProjectClient(
-            endpoint=PROJECT_CONNECTION_STRING,
-            credential=DefaultAzureCredential(),
-        )
-        self.openai = self.client.get_openai_client()
+        """Configure the claims decision agent for API-key calls."""
+        self.client = create_foundry_client()
 
-        system_prompt = """
+        self.instructions = """
         You are a senior claims adjuster and decision specialist for ClaimSight Insurance.
         Given a list of flags from a claim assessment, your job is to:
         1. Determine the recommended action based on the pattern of flags:
@@ -262,36 +213,21 @@ class ClaimsDecisionAgent:
         URGENCY: ...
         """
 
-        self.agent = self.client.agents.create_version(
-            agent_name="claims-decision-agent",
-            definition=PromptAgentDefinition(
-                model=MODEL_DEPLOYMENT_NAME,
-                instructions=system_prompt,
-            ),
-        )
+        self.agent = ApiKeyAgent(name="claims-decision-agent")
 
         return self.agent
 
     def run(self, input_text: str) -> str:
         """Run the claims decision agent with the given input."""
-        conversation = self.openai.conversations.create()
-
-        response = self.openai.responses.create(
-            input=input_text,
-            conversation=conversation.id,
-            extra_body={"agent_reference": {"name": self.agent.name, "type": "agent_reference"}},
+        return run_agent_response(
+            self.client,
+            model=MODEL_DEPLOYMENT_NAME,
+            instructions=self.instructions,
+            input_text=input_text,
         )
 
-        self.openai.conversations.delete(conversation_id=conversation.id)
-        return response.output_text
-
     def cleanup(self):
-        """Delete the agent version and close connections."""
-        if self.agent:
-            self.client.agents.delete_version(
-                agent_name=self.agent.name,
-                agent_version=self.agent.version,
-            )
+        """Close the API client."""
         if self.client:
             self.client.close()
 
@@ -301,16 +237,16 @@ class ClaimsDecisionAgent:
 # =============================================================================
 
 def main():
-    if not PROJECT_CONNECTION_STRING:
-        print("❌ PROJECT_CONNECTION_STRING not set. Run challenge 0 first!")
+    if not FOUNDRY_ENDPOINT or not API_KEY:
+        print("❌ FOUNDRY_ENDPOINT and API_KEY must be set in .env")
         sys.exit(1)
 
     print("=== Claims Triage Agent ===")
-    print("Creating agent...")
+    print("Configuring agent...")
 
     triage_agent = ClaimsTriageAgent()
     triage_agent.create()
-    print(f"✅ Created: {triage_agent.agent.name} (version {triage_agent.agent.version})")
+    print(f"✅ Configured: {triage_agent.agent.name} (API key)")
 
     print("\nAssessing all claims...")
     claim_batch = _load_claim_batch()
@@ -325,11 +261,11 @@ def main():
     print(triage_result)
 
     print("\n=== Claims Decision Agent ===")
-    print("Creating agent...")
+    print("Configuring agent...")
 
     decision_agent = ClaimsDecisionAgent()
     decision_agent.create()
-    print(f"✅ Created: {decision_agent.agent.name} (version {decision_agent.agent.version})")
+    print(f"✅ Configured: {decision_agent.agent.name} (API key)")
 
     print("\nDeciding on high-risk claim batch...")
     high_risk_batch = [claim for claim in claim_batch if claim["status"] in {"critical", "warning"}]
@@ -341,11 +277,8 @@ def main():
     )
     print(decision_result)
 
-    # Cleanup — comment out to keep agents visible in the Foundry portal
-    # print("\nCleaning up agents...")
-    # triage_agent.cleanup()
-    # decision_agent.cleanup()
-    # print("✅ Done!")
+    triage_agent.cleanup()
+    decision_agent.cleanup()
 
 
 if __name__ == "__main__":

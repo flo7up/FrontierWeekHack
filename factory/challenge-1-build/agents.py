@@ -14,10 +14,6 @@ import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
-from azure.ai.projects import AIProjectClient
-from azure.ai.projects.models import FunctionTool, PromptAgentDefinition
-from azure.identity import DefaultAzureCredential
-from openai.types.responses.response_input_param import FunctionCallOutput
 
 
 # Resolve repo root by finding .env in parent directories.
@@ -29,12 +25,16 @@ def _find_repo_root() -> Path:
 
 
 REPO_ROOT = _find_repo_root()
+sys.path.insert(0, str(REPO_ROOT.parent))
+
+from foundry_api import ApiKeyAgent, create_foundry_client, run_agent_response
 
 # Load environment
 env_path = REPO_ROOT / ".env"
 load_dotenv(env_path)
 
-PROJECT_CONNECTION_STRING = os.getenv("PROJECT_CONNECTION_STRING")
+FOUNDRY_ENDPOINT = os.getenv("FOUNDRY_ENDPOINT")
+API_KEY = os.getenv("API_KEY")
 MODEL_DEPLOYMENT_NAME = os.getenv("MODEL_DEPLOYMENT_NAME", "gpt-5.4")
 SENSOR_DATA_PATH = Path(__file__).resolve().parent / "sensor_data.json"
 
@@ -111,11 +111,12 @@ def check_thresholds(machine_id: str) -> str:
     return json.dumps(results, indent=2)
 
 
-# Tool definition for the agent (Foundry FunctionTool format)
-CHECK_THRESHOLDS_TOOL = FunctionTool(
-    name="check_thresholds",
-    description="Check if a machine's sensor readings are within normal operating thresholds. Returns anomalies if any readings are out of spec.",
-    parameters={
+# Tool definition for the OpenAI Responses API
+CHECK_THRESHOLDS_TOOL = {
+    "type": "function",
+    "name": "check_thresholds",
+    "description": "Check if a machine's sensor readings are within normal operating thresholds. Returns anomalies if any readings are out of spec.",
+    "parameters": {
         "type": "object",
         "properties": {
             "machine_id": {
@@ -126,8 +127,8 @@ CHECK_THRESHOLDS_TOOL = FunctionTool(
         "required": ["machine_id"],
         "additionalProperties": False,
     },
-    strict=False,
-)
+    "strict": False,
+}
 
 
 # =============================================================================
@@ -138,17 +139,13 @@ class AnomalyDetectionAgent:
     def __init__(self):
         self.agent = None
         self.client = None
-        self.openai = None
+        self.instructions = ""
 
     def create(self):
-        """Create the anomaly detection agent in Foundry."""
-        self.client = AIProjectClient(
-            endpoint=PROJECT_CONNECTION_STRING,
-            credential=DefaultAzureCredential(),
-        )
-        self.openai = self.client.get_openai_client()
+        """Configure the anomaly detection agent for API-key calls."""
+        self.client = create_foundry_client()
 
-        system_prompt = """
+        self.instructions = """
         You are an industrial sensor anomaly detection expert for TireForge Industries.
         When asked to check machines, use the check_thresholds tool for each machine.
         For each machine, report:
@@ -160,65 +157,23 @@ class AnomalyDetectionAgent:
         Be concise and structured.
         """
 
-        self.agent = self.client.agents.create_version(
-            agent_name="anomaly-detection-agent",
-            definition=PromptAgentDefinition(
-                model=MODEL_DEPLOYMENT_NAME,
-                instructions=system_prompt,
-                tools=[CHECK_THRESHOLDS_TOOL],
-            ),
-        )
+        self.agent = ApiKeyAgent(name="anomaly-detection-agent")
 
         return self.agent
 
     def run(self, input_text: str) -> str:
         """Run the anomaly detection agent with the given input."""
-        conversation = self.openai.conversations.create()
-
-        response = self.openai.responses.create(
-            input=input_text,
-            conversation=conversation.id,
-            extra_body={"agent_reference": {"name": self.agent.name, "type": "agent_reference"}},
+        return run_agent_response(
+            self.client,
+            model=MODEL_DEPLOYMENT_NAME,
+            instructions=self.instructions,
+            input_text=input_text,
+            tools=[CHECK_THRESHOLDS_TOOL],
+            tool_handlers={"check_thresholds": check_thresholds},
         )
 
-        # Handle function call loops
-        while True:
-            function_calls = [item for item in response.output if item.type == "function_call"]
-            if not function_calls:
-                break
-
-            input_list = []
-            for item in function_calls:
-                if item.name == "check_thresholds":
-                    args = json.loads(item.arguments)
-                    result = check_thresholds(args["machine_id"])
-                else:
-                    result = json.dumps({"error": f"Unknown tool '{item.name}'"})
-
-                input_list.append(
-                    FunctionCallOutput(
-                        type="function_call_output",
-                        call_id=item.call_id,
-                        output=result,
-                    )
-                )
-
-            response = self.openai.responses.create(
-                input=input_list,
-                conversation=conversation.id,
-                extra_body={"agent_reference": {"name": self.agent.name, "type": "agent_reference"}},
-            )
-
-        self.openai.conversations.delete(conversation_id=conversation.id)
-        return response.output_text
-
     def cleanup(self):
-        """Delete the agent version and close connections."""
-        if self.agent:
-            self.client.agents.delete_version(
-                agent_name=self.agent.name,
-                agent_version=self.agent.version,
-            )
+        """Close the API client."""
         if self.client:
             self.client.close()
 
@@ -231,17 +186,13 @@ class FaultDiagnosisAgent:
     def __init__(self):
         self.agent = None
         self.client = None
-        self.openai = None
+        self.instructions = ""
 
     def create(self):
-        """Create the fault diagnosis agent in Foundry."""
-        self.client = AIProjectClient(
-            endpoint=PROJECT_CONNECTION_STRING,
-            credential=DefaultAzureCredential(),
-        )
-        self.openai = self.client.get_openai_client()
+        """Configure the fault diagnosis agent for API-key calls."""
+        self.client = create_foundry_client()
 
-        system_prompt = """
+        self.instructions = """
         You are a mechanical fault diagnosis expert for TireForge Industries.
         Given a list of sensor anomalies from a machine, your job is to:
         1. Identify the most likely root cause based on the pattern of anomalies:
@@ -257,36 +208,21 @@ class FaultDiagnosisAgent:
         URGENCY: ...
         """
 
-        self.agent = self.client.agents.create_version(
-            agent_name="fault-diagnosis-agent",
-            definition=PromptAgentDefinition(
-                model=MODEL_DEPLOYMENT_NAME,
-                instructions=system_prompt,
-            ),
-        )
+        self.agent = ApiKeyAgent(name="fault-diagnosis-agent")
 
         return self.agent
 
     def run(self, input_text: str) -> str:
         """Run the fault diagnosis agent with the given input."""
-        conversation = self.openai.conversations.create()
-
-        response = self.openai.responses.create(
-            input=input_text,
-            conversation=conversation.id,
-            extra_body={"agent_reference": {"name": self.agent.name, "type": "agent_reference"}},
+        return run_agent_response(
+            self.client,
+            model=MODEL_DEPLOYMENT_NAME,
+            instructions=self.instructions,
+            input_text=input_text,
         )
 
-        self.openai.conversations.delete(conversation_id=conversation.id)
-        return response.output_text
-
     def cleanup(self):
-        """Delete the agent version and close connections."""
-        if self.agent:
-            self.client.agents.delete_version(
-                agent_name=self.agent.name,
-                agent_version=self.agent.version,
-            )
+        """Close the API client."""
         if self.client:
             self.client.close()
 
@@ -296,16 +232,16 @@ class FaultDiagnosisAgent:
 # =============================================================================
 
 def main():
-    if not PROJECT_CONNECTION_STRING:
-        print("❌ PROJECT_CONNECTION_STRING not set. Run challenge 0 first!")
+    if not FOUNDRY_ENDPOINT or not API_KEY:
+        print("❌ FOUNDRY_ENDPOINT and API_KEY must be set in .env")
         sys.exit(1)
 
     print("=== Anomaly Detection Agent ===")
-    print("Creating agent...")
+    print("Configuring agent...")
 
     anomaly_agent = AnomalyDetectionAgent()
     anomaly_agent.create()
-    print(f"✅ Created: {anomaly_agent.agent.name} (version {anomaly_agent.agent.version})")
+    print(f"✅ Configured: {anomaly_agent.agent.name} (API key)")
 
     print("\nAnalyzing all machines...")
     machine_batch = _load_sensor_batch()
@@ -320,11 +256,11 @@ def main():
     print(anomaly_result)
 
     print("\n=== Fault Diagnosis Agent ===")
-    print("Creating agent...")
+    print("Configuring agent...")
 
     diagnosis_agent = FaultDiagnosisAgent()
     diagnosis_agent.create()
-    print(f"✅ Created: {diagnosis_agent.agent.name} (version {diagnosis_agent.agent.version})")
+    print(f"✅ Configured: {diagnosis_agent.agent.name} (API key)")
 
     print("\nDiagnosing critical machine: curing_press...")
     critical_batch = [machine for machine in machine_batch if machine["status"] in {"critical", "warning"}]
@@ -336,11 +272,8 @@ def main():
     )
     print(diagnosis_result)
 
-    # Cleanup — comment out to keep agents visible in the Foundry portal
-    # print("\nCleaning up agents...")
-    # anomaly_agent.cleanup()
-    # diagnosis_agent.cleanup()
-    # print("✅ Done!")
+    anomaly_agent.cleanup()
+    diagnosis_agent.cleanup()
 
 
 if __name__ == "__main__":

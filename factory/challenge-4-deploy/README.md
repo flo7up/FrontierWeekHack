@@ -14,10 +14,10 @@ factory health workflow, run it from code, then build and test it visually in th
 
 ## Learning Objectives
 
-- Deploy persistent production agents (create once, reuse forever)
+- Configure reusable agent roles with the API-key-authenticated Responses API
 - Orchestrate multiple agents step-by-step in a Python workflow
 - Build the same workflow visually in the Foundry portal
-- Invoke the portal workflow from Python with live streaming
+- Run a consolidated workflow response from Python
 - View run history and traces in the portal
 
 ## The Workflow
@@ -43,7 +43,7 @@ print_factory_report()      <-- Consolidated Health Report
 
 Open [deploy.py](./deploy.py) and review:
 
-- **`ensure_agents_deployed()`** — lists existing agents, creates `anomaly-detection-agent` and `fault-diagnosis-agent` if not present
+- **`ensure_agents_deployed()`** — configures the local `anomaly-detection-agent` and `fault-diagnosis-agent` roles
 - **`run_anomaly_scan()`** — calls the anomaly agent, handles the `check_thresholds` function call loop
 - **`run_fault_diagnosis()`** — calls the diagnosis agent for each affected machine
 - **`run_factory_health_workflow()`** — orchestrates all steps and returns the consolidated report
@@ -57,9 +57,9 @@ python deploy.py
 
 Expected output:
 ```
-=== Step 1: Ensure Agents Are Deployed ===
-  Found existing: anomaly-detection-agent
-  Found existing: fault-diagnosis-agent
+=== Step 1: Configure API-Key Agent Roles ===
+  Configured: anomaly-detection-agent
+  Configured: fault-diagnosis-agent
 
 === Step 2a: Anomaly Scan ===
   CP-003 CRITICAL: vibration 143% above max, pressure 13.8% above max, temperature 10.3% above max
@@ -80,7 +80,10 @@ TIREFORGE FACTORY HEALTH REPORT
 
 ---
 
-## Part 2 — Portal: Build and Test the Visual Workflow
+## Part 2 — Optional Portal Extension
+
+> [!IMPORTANT]
+> A Foundry resource API key authorizes model data-plane calls, but it cannot create persistent agents or portal workflows. This optional section requires an Entra-authenticated portal session. It is not required for the API-key lab path.
 
 ### Step 3: Verify agents are deployed in the portal
 
@@ -193,8 +196,8 @@ TIREFORGE FACTORY HEALTH REPORT
 ## Success Criteria
 
 - [ ] Python workflow runs end-to-end: anomaly scan → diagnosis → factory health report
-- [ ] Both agents visible in the Foundry portal as persistent assets
-- [ ] Visual workflow created in the portal and tested in its playground
+- [ ] Local API-key workflow returns a consolidated diagnosis report
+- [ ] Optional: visual workflow created in the portal with an Entra-authenticated session
 
 ---
 
@@ -202,9 +205,9 @@ TIREFORGE FACTORY HEALTH REPORT
 
 You've built and tested your agents locally. Here's how to take them to production:
 
-### Option 1: Hosted Agents (What You Already Have)
+### Option 1: Hosted Agents (Requires Entra Authentication)
 
-Your agents created with `agents.create_version()` are already production-ready hosted agents. They live in Foundry indefinitely — any client can invoke them by name via the Responses API. No infrastructure to manage; Foundry handles scaling, versioning, and availability.
+The API-key lab creates local agent roles, not hosted agent resources. To deploy persistent agents, use an Entra-authenticated deployment identity and `AIProjectClient`.
 
 - **Versioning**: Each `create_version()` produces an immutable version. Roll back by referencing an older version.
 - **Multi-tenant**: Multiple users/apps can call the same agent simultaneously.

@@ -14,10 +14,10 @@ claims processing workflow, run it from code, then build and test it visually in
 
 ## Learning Objectives
 
-- Deploy persistent production agents (create once, reuse forever)
+- Configure reusable agent roles with the API-key-authenticated Responses API
 - Orchestrate multiple agents step-by-step in a Python workflow
 - Build the same workflow visually in the Foundry portal
-- Invoke the portal workflow from Python with live streaming
+- Run a consolidated workflow response from Python
 - View run history and traces in the portal
 
 ## The Workflow
@@ -43,7 +43,7 @@ print_claims_report()           <-- Consolidated Claims Processing Report
 
 Open [deploy.py](./deploy.py) and review:
 
-- **`ensure_agents_deployed()`** — lists existing agents, creates `claims-triage-agent` and `claims-decision-agent` if not present
+- **`ensure_agents_deployed()`** — configures the local `claims-triage-agent` and `claims-decision-agent` roles
 - **`run_claims_triage()`** — calls the triage agent, handles the `assess_claim` function call loop
 - **`run_claims_decision()`** — calls the decision agent for each flagged claim
 - **`run_claims_workflow()`** — orchestrates all steps and returns the consolidated report
@@ -57,9 +57,9 @@ python deploy.py
 
 Expected output:
 ```
-=== Step 1: Ensure Agents Are Deployed ===
-  Found existing: claims-triage-agent
-  Found existing: claims-decision-agent
+=== Step 1: Configure API-Key Agent Roles ===
+  Configured: claims-triage-agent
+  Configured: claims-decision-agent
 
 === Step 2a: Claims Triage ===
   CLM-001 CRITICAL: fraud_risk_score 64% above max, damage_vs_estimate_match 25.7% below min
@@ -80,7 +80,10 @@ CLAIMSIGHT INSURANCE — CLAIMS PROCESSING REPORT
 
 ---
 
-## Part 2 — Portal: Build and Test the Visual Workflow
+## Part 2 — Optional Portal Extension
+
+> [!IMPORTANT]
+> A Foundry resource API key authorizes model data-plane calls, but it cannot create persistent agents or portal workflows. This optional section requires an Entra-authenticated portal session. It is not required for the API-key lab path.
 
 ### Step 3: Verify agents are deployed in the portal
 
@@ -196,8 +199,8 @@ CLAIMSIGHT INSURANCE — CLAIMS PROCESSING REPORT
 ## Success Criteria
 
 - [ ] Python workflow runs end-to-end: triage → decisions → claims report
-- [ ] Both agents visible in the Foundry portal as persistent assets
-- [ ] Visual workflow created in the portal and tested in its playground
+- [ ] Local API-key workflow returns a consolidated claims report
+- [ ] Optional: visual workflow created in the portal with an Entra-authenticated session
 
 ---
 
@@ -205,9 +208,9 @@ CLAIMSIGHT INSURANCE — CLAIMS PROCESSING REPORT
 
 You've built and tested your agents locally. Here's how to take them to production:
 
-### Option 1: Hosted Agents (What You Already Have)
+### Option 1: Hosted Agents (Requires Entra Authentication)
 
-Your agents created with `agents.create_version()` are already production-ready hosted agents. They live in Foundry indefinitely — any client can invoke them by name via the Responses API. No infrastructure to manage; Foundry handles scaling, versioning, and availability.
+The API-key lab creates local agent roles, not hosted agent resources. To deploy persistent agents, use an Entra-authenticated deployment identity and `AIProjectClient`.
 
 - **Versioning**: Each `create_version()` produces an immutable version. Roll back by referencing an older version.
 - **Multi-tenant**: Multiple users/apps can call the same agent simultaneously.

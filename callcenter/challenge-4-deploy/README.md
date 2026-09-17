@@ -14,10 +14,10 @@ call center triage workflow, run it from code, then build and test it visually i
 
 ## Learning Objectives
 
-- Deploy persistent production agents (create once, reuse forever)
+- Configure reusable agent roles with the API-key-authenticated Responses API
 - Orchestrate multiple agents step-by-step in a Python workflow
 - Build the same workflow visually in the Foundry portal
-- Invoke the portal workflow from Python with live streaming
+- Run a consolidated workflow response from Python
 - View run history and traces in the portal
 
 ## The Workflow
@@ -43,7 +43,7 @@ print_shift_report()            <-- Consolidated Shift Report
 
 Open [deploy.py](./deploy.py) and review:
 
-- **`ensure_agents_deployed()`** — lists existing agents, creates `intent-classification-agent` and `resolution-advisor-agent` if not present
+- **`ensure_agents_deployed()`** — configures the local `intent-classification-agent` and `resolution-advisor-agent` roles
 - **`run_intent_classification()`** — calls the intent agent, handles the `lookup_customer` function call loop
 - **`run_resolution_advisory()`** — calls the resolution agent for each high-priority call
 - **`run_call_center_workflow()`** — orchestrates all steps and returns the consolidated report
@@ -57,9 +57,9 @@ python deploy.py
 
 Expected output:
 ```
-=== Step 1: Ensure Agents Are Deployed ===
-  Found existing: intent-classification-agent
-  Found existing: resolution-advisor-agent
+=== Step 1: Configure API-Key Agent Roles ===
+   Configured: intent-classification-agent
+   Configured: resolution-advisor-agent
 
 === Step 2a: Intent Classification ===
   CALL-001: billing_dispute (HIGH) — frustrated, retention risk HIGH
@@ -84,7 +84,10 @@ NOVATEL CALL CENTER — SHIFT REPORT
 
 ---
 
-## Part 2 — Portal: Build and Test the Visual Workflow
+## Part 2 — Optional Portal Extension
+
+> [!IMPORTANT]
+> A Foundry resource API key authorizes model data-plane calls, but it cannot create persistent agents or portal workflows. This optional section requires an Entra-authenticated portal session. It is not required for the API-key lab path.
 
 ### Step 3: Verify agents are deployed in the portal
 
@@ -187,8 +190,8 @@ NOVATEL CALL CENTER — SHIFT REPORT
 ## Success Criteria
 
 - [ ] Python workflow runs end-to-end: classification → resolution → shift report
-- [ ] Both agents visible in the Foundry portal as persistent assets
-- [ ] Visual workflow created in the portal and tested in its playground
+- [ ] Local API-key workflow returns a consolidated call center report
+- [ ] Optional: visual workflow created in the portal with an Entra-authenticated session
 
 ---
 
@@ -196,9 +199,9 @@ NOVATEL CALL CENTER — SHIFT REPORT
 
 You've built and tested your agents locally. Here's how to take them to production:
 
-### Option 1: Hosted Agents (What You Already Have)
+### Option 1: Hosted Agents (Requires Entra Authentication)
 
-Your agents created with `agents.create_version()` are already production-ready hosted agents. They live in Foundry indefinitely — any client can invoke them by name via the Responses API. No infrastructure to manage; Foundry handles scaling, versioning, and availability.
+The API-key lab creates local agent roles, not hosted agent resources. To deploy persistent agents, use an Entra-authenticated deployment identity and `AIProjectClient`.
 
 - **Versioning**: Each `create_version()` produces an immutable version. Roll back by referencing an older version.
 - **Multi-tenant**: Multiple users/apps can call the same agent simultaneously.

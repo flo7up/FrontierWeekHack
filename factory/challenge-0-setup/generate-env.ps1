@@ -75,6 +75,10 @@ $project = Invoke-AzureJson @(
     'cognitiveservices', 'account', 'project', 'show', '--resource-group', $ResourceGroup,
     '--name', $foundry.name, '--project-name', $ProjectName
 )
+$keys = Invoke-AzureJson @(
+    'cognitiveservices', 'account', 'keys', 'list', '--resource-group', $ResourceGroup,
+    '--name', $foundry.name
+)
 $deployments = @(Invoke-AzureJson @(
     'cognitiveservices', 'account', 'deployment', 'list', '--resource-group', $ResourceGroup,
     '--name', $foundry.name
@@ -103,6 +107,7 @@ $settings = [ordered]@{
     FOUNDRY_ENDPOINT = $foundry.properties.endpoint
     PROJECT_CONNECTION_STRING = $project.properties.endpoints.'AI Foundry API'
     MODEL_DEPLOYMENT_NAME = $model.name
+    API_KEY = $keys.key1
     APPLICATIONINSIGHTS_CONNECTION_STRING = $insights.properties.ConnectionString
     APPINSIGHTS_INSTRUMENTATION_KEY = $insights.properties.InstrumentationKey
     AZURE_EXPERIMENTAL_ENABLE_GENAI_TRACING = 'true'
