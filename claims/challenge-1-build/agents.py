@@ -25,13 +25,13 @@ def _find_repo_root() -> Path:
 
 
 REPO_ROOT = _find_repo_root()
-sys.path.insert(0, str(REPO_ROOT.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from foundry_api import ApiKeyAgent, create_foundry_client, run_agent_response
 
 # Load environment
 env_path = REPO_ROOT / ".env"
-load_dotenv(env_path)
+load_dotenv(env_path, override=True)
 
 FOUNDRY_ENDPOINT = os.getenv("FOUNDRY_ENDPOINT")
 API_KEY = os.getenv("API_KEY")

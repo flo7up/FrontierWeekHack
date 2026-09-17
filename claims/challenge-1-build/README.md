@@ -1,6 +1,6 @@
 # Challenge 1: Build Agents
 
-Time: ~75 minutes
+Time: 70 minutes, including discussion and an optional experiment.
 
 ## Objectives
 
@@ -8,7 +8,7 @@ By the end of this challenge, you will have:
 
 - ✅ A **Claims Triage Agent** that assesses incoming claims and flags risks
 - ✅ A **Claims Decision Agent** that analyzes flagged claims and recommends actions
-- ✅ Both agents tested against real claims data
+- Both roles tested against fictional claims, with you reviewing the answers
 
 ![build](./images/build.png)
 
@@ -25,76 +25,65 @@ Check out [claims_data.json](./claims_data.json) to see the current batch of cla
 
 This lab uses the **OpenAI Responses API** with the shared Foundry endpoint and workshop API key. The code runs locally and creates no portal resources.
 
-![foundry](./images/foundry.png)
-
 The code in [agents.py](./agents.py) configures two agent roles, registers a local tool, and runs them against every claim in `claims_data.json`.
 
 ## Agents and Tools
 
-### What is an agent?
+| Term | Meaning here |
+|------|--------------|
+| Model | The shared AI service that produces an answer |
+| Prompt | The instructions and question sent to the model |
+| Agent role | A model given a particular job, such as explaining a claim's flags |
+| Tool | Existing Python code the model can ask to run; `assess_claim` compares saved metrics with saved limits |
 
-In this lab, an agent is a model call configured with instructions and optional tools. The Responses API can invoke tools autonomously and continue the response after your Python code returns each tool result. You configure it with:
+The tool calculates which metrics are outside the example limits. It does not detect real fraud or read an actual insurance policy. The model explains the flags and suggests a next step; a person must assess whether that suggestion is justified.
 
-- A **name** and **model** (e.g. `gpt-5.4`)
-- A **system prompt** — instructions that define its role, personality, and constraints
-- One or more **tools** it can call when it needs information or actions beyond its training data
+## 1. Run the Supplied Example
 
-The roles are local configurations: instructions, model, and tools sent with each request.
+Complete [Connect](../challenge-0-setup/README.md) first. Keep the terminal in the main workshop folder. Use the command for your operating system; do not change folders.
 
-### What are tools?
+### Windows PowerShell
 
-Tools extend an agent's capabilities beyond pure language generation. When the model decides it needs information it doesn't have in its context window, it emits a **tool call** — a structured JSON request specifying the tool name and arguments. The SDK intercepts this, runs the corresponding Python function, and feeds the result back to the model. This reasoning loop continues until the agent produces a final response.
-
-From the model's perspective, tools are described by a **JSON schema** (name, description, parameters). The model reads these descriptions and decides autonomously when and how to call them — you never hard-code the decision logic.
-
-### What tools can you add?
-
-| Tool type | What it does | Best for |
-|-----------|-------------|----------|
-| **Function** | Calls a local Python function you define | Any custom logic: database lookups, APIs, calculations |
-| **Code Interpreter** | Lets the agent write and execute Python in a sandbox | Data analysis, chart generation, file processing |
-| **File Search** | Semantic search over a Microsoft Foundry knowledge base | Policy docs, manuals, historical records |
-| **Bing Search** | Live web search | Real-time information, news |
-| **Azure AI Search** | Queries an Azure Search index | Grounded retrieval over your own data at scale |
-
-#### Vector databases and Microsoft Foundry knowledge bases
-
-When your agent needs to answer questions grounded in a large body of documents — policy manuals, product specs, historical records — you need a **vector database**. Unlike keyword search, a vector database converts text into numerical embeddings and finds semantically similar passages at query time. This lets the agent ask a natural-language question and retrieve the right content even when the exact words don’t appear in the query.
-
-**Microsoft Foundry** includes a built-in knowledge base backed by a vector store. You upload documents (PDFs, Word files, plain text) and the service automatically chunks, embeds, and indexes them. When you attach this knowledge base to an agent as a **File Search** tool, the agent queries it at inference time — pulling relevant passages into its context before generating a response, so its answers are grounded in your actual documents rather than model training data alone.
-
-For ClaimSight Insurance, useful knowledge bases would include:
-
-- **Insurance policy documents** — coverage terms, exclusion clauses, and payout limits by policy type (auto, property, liability)
-- **Regulatory compliance guidelines** — state-specific claim handling rules, mandatory timelines, and disclosure requirements
-- **Fraud pattern library** — documented fraud schemes, red-flag indicator combinations, and historical case summaries
-
-With this in place, the **Claims Decision Agent** could query “what is the coverage limit for water damage on a standard home policy in California?” and retrieve the exact policy terms — grounding its approve/deny recommendation in the actual policy language rather than a general understanding of insurance.
-
-In this challenge the agents use **function tools**. The **Claims Triage Agent** uses `assess_claim` to retrieve full claim metrics — document completeness, fraud risk score, damage estimates — before scoring risk. Without this tool, the agent would have to guess from context alone — with it, every triage decision is grounded in the claim's actual data.
-
-## Get Started
-
-Open [agents.py](./agents.py) and review the implementation of both agents.
-
-```bash
-cd claims/challenge-1-build
-python agents.py
+```powershell
+.\.venv\Scripts\python.exe claims/challenge-1-build/agents.py
 ```
 
-As the script runs, each claim from `claims_data.json` is processed by the **Claims Triage Agent** role first, and the high-risk batch is then processed by the **Claims Decision Agent** role. The raw responses are printed in the terminal.
+### macOS or Linux
 
-## Experiment
+```bash
+./.venv/bin/python claims/challenge-1-build/agents.py
+```
 
-1. Change one sentence in an agent's instructions and rerun the script.
-2. Change one claim metric in [`claims_data.json`](./claims_data.json) and predict the result before rerunning.
-3. Inspect `ASSESS_CLAIM_TOOL` and `assess_claim()` to see the contract between the model and Python.
-4. Discuss which claim decisions must always remain with a human.
+Wait for both sections to finish. Several model requests are made, so this can take a few minutes. Do not launch another copy while one is running. To stop a run, click the terminal and press **Ctrl+C** once.
 
-## Success Criteria
+## 2. Check the Answers
 
-- [ ] Claims Triage Agent correctly identifies the 2 warning + 1 critical claim
-- [ ] Claims Decision Agent provides reasonable action recommendations
-- [ ] Both agents respond coherently when given a claim's metrics
+With the unchanged [sample data](./claims_data.json), look for:
+
+| Records | What to check |
+|---------|---------------|
+| CLM-002 and CLM-004 | Metrics within the example limits |
+| CLM-001, CLM-003, and CLM-005 | Flags supported by the saved metrics; compare the reported numbers with the data |
+
+You should see a triage report followed by suggestions for CLM-001, CLM-003, and CLM-005. Wording and order can differ each run. A coherent answer is not proof of a correct decision, and a flag is not proof of fraud.
+
+These are two separate examples: the second role receives a batch selected from saved status labels, not the first role's answer. The next challenge introduces a combined process.
+
+## 3. Optional: Change One Instruction
+
+1. In VS Code, open `claims/challenge-1-build/agents.py` ([view code](./agents.py)).
+2. Find `class ClaimsDecisionAgent`, then the English instructions between the triple quotes after `self.instructions =`.
+3. Add this sentence inside those quotes: **Use plain language. Name the evidence for your recommendation and what a human reviewer still needs to check.** Do not change quotation marks or indentation.
+4. Save and rerun the same command. Compare one claim's before/after answer. To undo your experiment, use **Edit > Undo** on your own edit and save again.
+
+Not comfortable editing? Suggest the sentence to a partner or discuss what you expect it to change. That meets the learning goal too.
+
+## 4. Discuss and Move On
+
+- Is each recommendation supported by a supplied metric?
+- Did the model invent a policy rule or turn a risk indicator into an accusation?
+- Who would need to approve a real claim decision?
+
+**Checkpoint:** explain why checking a number and deciding an insurance claim are different tasks. No claims are approved or denied by this script. Leave the sample data unchanged for the next challenge; its saved status labels do not automatically update when a metric is edited.
 
 Continue to [Challenge 2: Local Workflow](../challenge-2-workflow/README.md).

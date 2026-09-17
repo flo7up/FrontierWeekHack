@@ -1,37 +1,51 @@
 # Challenge 2: Local Workflow
 
-Time: ~60 minutes
+Time: 55 minutes, including review and an optional experiment.
 
-Combine the anomaly detection and fault diagnosis roles into a local workflow. Every model request uses the shared API key; nothing is created in the Foundry portal.
+**Goal:** explain how a sequence of steps differs from a single AI answer. The supplied Python program coordinates the steps; it does not deploy anything, change equipment, or require portal access.
 
-## Run the Workflow
+## 1. Run the Combined Example
 
-```bash
-cd factory/challenge-2-workflow
-python deploy.py
+Finish [Build Agents](../challenge-1-build/README.md) first. Keep the terminal in the main workshop folder, not inside a scenario folder. Use one command for your operating system.
+
+### Windows PowerShell
+
+```powershell
+.\.venv\Scripts\python.exe factory/challenge-2-workflow/deploy.py
 ```
 
-The workflow:
+### macOS or Linux
 
-1. Calls `check_thresholds` for each machine.
-2. Produces a grounded anomaly report.
-3. Sends affected machines to the diagnosis role.
-4. Prints one consolidated factory health report.
+```bash
+./.venv/bin/python factory/challenge-2-workflow/deploy.py
+```
 
-## Explore the Code
+This makes several model requests and may take a few minutes. Wait for **`Workflow complete!`** before starting another run. If it appears stuck, press **Ctrl+C** and ask the facilitator; do not repeatedly restart it. For connection errors, use the [Connect troubleshooting table](../challenge-0-setup/README.md#if-something-goes-wrong).
 
-Open [`deploy.py`](./deploy.py) and find:
+## 2. Follow the Steps
 
-- `run_anomaly_scan()` — model plus local function-tool loop
-- `run_fault_diagnosis()` — second agent role
-- `run_factory_health_workflow()` — Python orchestration
+1. The anomaly role requests tool checks and produces a report on all five machines.
+2. Python recalculates the threshold checks to select machines with out-of-range readings. It does not interpret the model's report to make this selection.
+3. The diagnosis role receives each selected machine's calculated anomalies and suggests causes and next steps.
+4. Python collects the results into one report.
 
-## Experiment
+With the unchanged [sample data](../challenge-1-build/sensor_data.json), the final report should say **5 machines checked**, **3 affected**: MX-001, CP-003, and IS-005. Model wording will vary. A maintenance suggestion is not a confirmed diagnosis.
 
-Choose one change, rerun, and compare the result:
+## 3. Optional: Make the Report Easier to Review
 
-- Change a threshold or reading in [`sensor_data.json`](../challenge-1-build/sensor_data.json).
-- Make the diagnosis instructions require a confidence level.
-- Add a rule that critical recommendations require human approval.
+Open `factory/challenge-2-workflow/deploy.py` ([view code](./deploy.py)). Find `run_fault_diagnosis()` and the `instructions` text containing `Use at most 120 words.` Replace that sentence with:
 
-Discuss: what would you add before this could trigger a real maintenance action?
+```text
+Use at most 120 words. Separate OBSERVED FACTS, POSSIBLE CAUSES, and HUMAN CHECKS. Do not present a possible cause as confirmed.
+```
+
+Change only the English text inside the existing quotation marks. Save, rerun the same command once, and compare one machine's answer. This file has its own instructions; edits from Challenge 1 do not automatically carry over. Reading and discussing this proposed change without editing is equally valid.
+
+## 4. Review as a Group
+
+- Does each proposed cause follow from the available readings?
+- Did the model invent a machine type, history, or inspection result?
+- Which step is fixed Python logic, and which step is an AI suggestion?
+- Does writing "human approval required" in a prompt actually enforce approval? No: a real application would need an explicit approval control.
+
+**Checkpoint:** explain the selection rule and name one claim an engineer would need to verify. Keep the key private, stop running scripts when finished, and join the 20-minute debrief. No real maintenance action has been taken.

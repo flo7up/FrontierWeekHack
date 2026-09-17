@@ -1,5 +1,9 @@
 # 📋 Scenario: AI Agents for Insurance Claims Processing
 
+Choose this scenario if you are interested in document review or decision support. The code is provided; your job is to run it, inspect the answers, and try an optional instruction change.
+
+**[Start with Connect](./challenge-0-setup/README.md).** All companies, people, and claims below are fictional. No claim is approved, denied, or paid by the workshop.
+
 ## Scenario
 
 ![scenario](./images/scenario.png)
@@ -8,9 +12,7 @@ You work at **ClaimSight Insurance**, a property and auto insurance company that
 
 Your mission: **Build AI agents using Microsoft Foundry** that can triage incoming claims and make intelligent processing decisions — flagging suspicious claims for investigation while fast-tracking legitimate ones.
 
-![orchestration](./images/agentic-orchestration.png)
-
-You'll build two agents:
+You'll run two supplied agent roles:
 
 1. **Claims Triage Agent** — Assesses claim metrics against acceptable thresholds and flags anomalies
 2. **Claims Decision Agent** — Takes flagged claims and recommends actions (approve, investigate, request documents, deny)
@@ -27,10 +29,9 @@ You'll build two agents:
 
 ## Prerequisites
 
-- Access to a pre-provisioned Microsoft Foundry resource and model deployment
-- **Python 3.10+** installed locally
-- A Foundry resource API key
-- A terminal (bash, PowerShell, or WSL)
+- VS Code and a stable Python 3.10 or newer, installed before the session
+- The workshop files and the API key supplied privately by the facilitator
+- A partner or facilitator to help with commands if needed
 
 ## Structure
 
@@ -40,9 +41,11 @@ All participant exercises run locally through the shared model API. No Azure sub
 
 | # | Challenge | Duration | What You'll Do |
 |---|-----------|----------|----------------|
-| 0 | [Connect](./challenge-0-setup/README.md) | 15 min | Configure and test the shared model |
-| 1 | [Build Agents](./challenge-1-build/README.md) | 75 min | Run claims triage and decision roles |
-| 2 | [Local Workflow](./challenge-2-workflow/README.md) | 60 min | Orchestrate triage → decision → claims report |
+| 0 | [Connect](./challenge-0-setup/README.md) | 20 min | Open the workshop and test the shared model |
+| 1 | [Build Agents](./challenge-1-build/README.md) | 70 min | Run two roles, inspect the evidence, and optionally change a prompt |
+| 2 | [Local Workflow](./challenge-2-workflow/README.md) | 55 min | Follow the selection steps and review a combined report |
+
+The three-hour session also includes a 15-minute break and a 20-minute debrief. Complete only this scenario. Reading results with a partner is a valid alternative to editing code.
 
 ## What You Will Learn
 
@@ -53,34 +56,10 @@ All participant exercises run locally through the shared model API. No Azure sub
 - Where production systems need identity, auditability, evaluation, and human approval
 
 
-## Architecture
+## Questions to Take Away
 
-![architecture](./images/architecture.png)
+- Is a risk flag evidence of fraud, or a reason to ask more questions?
+- Which policy documents and checks would a real adjuster need?
+- How would you test for wrong or unfair recommendations before anyone relies on them?
 
-
-## Next Steps
-
-Completing these challenges gives you a working local multi-agent workflow. Here are production directions to discuss after the hands-on section:
-
-**Deploy as a hosted agent endpoint**
-Microsoft Foundry can host your agents as persistent, scalable API endpoints — no infrastructure to manage. Once hosted, your claims intake system can submit new claims directly to the Triage Agent and receive a structured decision (approve / investigate / request documents / deny) without any manual triage step.
-
-**Add more tools to your agents**
-The `assess_claim` function in this lab uses local mock data. In production you'd replace it with tools that call real systems:
-- A `fetch_policy` tool querying your policy management system for the exact coverage terms, exclusions, and limits applicable to a specific claim
-- A `check_fraud_database` tool querying a fraud intelligence service for known patterns matching the claimant's history
-- A `request_documents` tool that automatically triggers a document request workflow in your DMS when the agent recommends it
-
-**Build a knowledge base**
-Upload ClaimSight's insurance policy documents, regulatory compliance guidelines, and fraud pattern library to a Microsoft Foundry knowledge base. Attach it to the Claims Decision Agent as a File Search tool so its recommendations cite actual policy language — producing decisions that are auditable and defensible to regulators.
-
-**Integrate evaluations into CI/CD**
-Run your evaluation dataset automatically on every pull request or deployment. If the coherence or relevance score drops below a threshold (e.g. 3.5 out of 5), block the release. In a regulated industry, this isn't just good practice — it's the kind of quality gate that compliance and audit teams expect to see documented.
-
-**Explore advanced agent patterns**
-- **Parallelise** triage across all incoming claims simultaneously instead of sequentially
-- **Add confidence thresholds** — if the Triage Agent's fraud risk assessment falls in an ambiguous range, route to a senior adjuster rather than passing to the Decision Agent automatically
-- **Human-in-the-loop** — for high-value claims (above a configurable threshold), always require human adjuster sign-off before the Decision Agent's recommendation is acted on
-
-**Fine-tune for your domain**
-Use your evaluation results to identify systematic errors — claim types the agent consistently misjudges or fraud indicators it underweights. Use those cases to refine system prompts, add targeted few-shot examples, or fine-tune the underlying model on ClaimSight's historical claim decisions.
+This is a learning example, not an insurance decision system. Use only the supplied fictional data: prompts and tool results are sent to the shared cloud model. Monitoring, formal evaluations, and deployment are discussion topics, not extra exercises to finish today.
