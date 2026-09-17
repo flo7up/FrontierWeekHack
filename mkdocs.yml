@@ -1,8 +1,8 @@
 site_name: Build AI Agents with Microsoft Foundry
 site_description: A three-hour hands-on lab for building tool-using AI agents with Microsoft Foundry and an API key.
-site_url: https://microsoft.github.io/FrontierWeekHack/
-repo_url: https://github.com/microsoft/FrontierWeekHack
-repo_name: microsoft/FrontierWeekHack
+site_url: https://flo7up.github.io/FrontierWeekHack/
+repo_url: https://github.com/flo7up/FrontierWeekHack
+repo_name: flo7up/FrontierWeekHack
 
 theme:
   name: material
