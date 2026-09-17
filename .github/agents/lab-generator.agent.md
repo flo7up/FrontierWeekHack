@@ -40,7 +40,7 @@ You are modeled after the TireForge Industries foundry-hackathon lab. You know:
 │   └── evaluate.py              # Evaluation pipeline with LLM-as-judge
 ├── challenge-4-deploy/
 │   ├── README.md
-│   ├── deploy.py                # Multi-agent orchestration workflow
+│   ├── workflow.py              # Multi-agent orchestration workflow
 │   └── evaluation_dataset.json  # 10 test cases for evaluation
 ```
 
@@ -73,7 +73,7 @@ Follow the exact code patterns from the reference lab:
 - `agents.py`: Two agent classes with system prompts tailored to the domain, a domain-specific tool function (like `check_thresholds`), FunctionTool definition, conversation handling with function call loops
 - `monitor.py`: Same tracing pattern (AIProjectInstrumentor + Azure Monitor), agent call adapted to domain
 - `evaluate.py`: Same evaluation pipeline structure, adapted instructions
-- `deploy.py`: Multi-agent workflow with the domain tool, streaming portal workflow support
+- `workflow.py`: Multi-agent workflow with the domain tool, streaming portal workflow support
 - `evaluation_dataset.json`: 10 test cases with inputs and expected outputs matching the domain
 
 ### Step 4: Generate Supporting Files

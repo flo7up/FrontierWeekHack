@@ -12,6 +12,13 @@
         }
     },
     "postCreateCommand": "az config set extension.dynamic_install_allow_preview=true && pip3 install --upgrade pip && pip3 install --user -r requirements.txt",
+    "forwardPorts": [8080],
+    "portsAttributes": {
+        "8080": {
+            "label": "Optional Agent Framework DevUI",
+            "onAutoForward": "notify"
+        }
+    },
     "customizations": {
         "vscode": {
             "extensions": [

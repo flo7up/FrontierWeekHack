@@ -62,3 +62,4 @@ nav:
       - Challenge 0 — Connect: callcenter/challenge-0-setup/README.md
       - Challenge 1 — Build Agents: callcenter/challenge-1-build/README.md
       - Challenge 2 — Local Workflow: callcenter/challenge-2-workflow/README.md
+  - Bonus DevUI: bonus-devui.md

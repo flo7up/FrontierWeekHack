@@ -30,6 +30,12 @@ All names, records, and readings are fictional workshop data. Outputs are sugges
 
 Success means explaining an agent's role, identifying the facts it used, and spotting one limitation. Finishing every optional experiment is not required.
 
+## Optional Bonus: Agent Framework DevUI
+
+The [DevUI bonus guide](./docs/bonus-devui.md) adds browser chat and local agent traces using the same private model key. Start one supplied scenario agent, ask a tool-using question, and inspect its inputs, results, and timing in **Traces > OTel Spans**. No Azure portal or Application Insights setup is needed.
+
+Allow 20-30 minutes as an alternative to a prompt experiment or an after-session activity. Bonus packages use a separate `.venv-devui` environment and are not installed by the core setup. In Codespaces, port 8080 must stay **Private**. DevUI has its own temporary login token; do not enter the Foundry API key in its browser login.
+
 ## Before the Session
 
 Choose **one** environment. Both run the same workshop; you do not need to set up both.

@@ -28,6 +28,12 @@ Choose **one** scenario for the session. If you are unsure, Call Center is an ac
 
 There are no portal exercises, deployments, shared dashboards, or formal evaluation jobs. The debrief asks how a real system would control access, protect data, track failures, check quality, limit spending, and require human approval. The examples are not production-ready systems or operational advice.
 
+## Optional Bonus: Agent Framework DevUI
+
+Want to see the agent's calls instead of only its final answer? The [DevUI bonus](bonus-devui.md) adds private browser chat and local traces for your scenario. Inspect a tool call, its returned facts, and the subsequent model answer. It uses the existing model API key, not the Azure portal.
+
+This is a 20-30 minute optional activity, replacing an experiment or continuing after the core workshop. Use its separate install instructions and keep the Codespaces port **Private**. Each participant has their own UI and trace view; model quota and credits are still shared.
+
 ## Before the Session
 
 Choose **one** option; the exercises are the same in both.

@@ -2,6 +2,7 @@
 
 import argparse
 import importlib.util
+import logging
 from pathlib import Path
 import sys
 from urllib.parse import urlsplit
@@ -107,6 +108,7 @@ def main() -> None:
 
     from agent_framework.devui import serve
 
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
     configure_local_tracing()
     print("DevUI captures fictional prompts, tool arguments, results, and replies for this session.")
     print("Keep the Codespaces port PRIVATE. No Azure portal or Application Insights is required.")
