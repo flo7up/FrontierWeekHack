@@ -1,6 +1,6 @@
 # Challenge 1: Build Agents
 
-Time: ~30 minutes
+Time: ~75 minutes
 
 ## Objectives
 
@@ -21,13 +21,13 @@ NovaTel Communications receives hundreds of calls daily. Each call has a summary
 
 Check out [call_data.json](./call_data.json) to see today's incoming calls.
 
-## Portal or SDK?
+## How It Works
 
-Microsoft Foundry supports portal-hosted agents and direct model calls. This lab uses the **OpenAI Responses API** with the Foundry resource endpoint and `API_KEY`, so no Azure CLI login or `DefaultAzureCredential` is required at runtime.
+This lab uses the **OpenAI Responses API** with the shared Foundry endpoint and workshop API key. The code runs locally and creates no portal resources.
 
 ![foundry](./images/foundry.png)
 
-The code in [agents.py](./agents.py) configures two local agent roles, registers their tools, and runs them against every call in `call_data.json`. API-key roles are created for each run and do not appear as persistent assets in the Foundry portal.
+The code in [agents.py](./agents.py) configures two agent roles, registers a local tool, and runs them against every call in `call_data.json`.
 
 ## Agents and Tools
 
@@ -39,7 +39,7 @@ In this lab, an agent is a model call configured with instructions and optional 
 - A **system prompt** — instructions that define its role, personality, and constraints
 - One or more **tools** it can call when it needs information or actions beyond its training data
 
-These API-key agents are local configurations, not managed project resources. Persistent portal agents require Entra authentication.
+The roles are local configurations: instructions, model, and tools sent with each request.
 
 ### What are tools?
 
@@ -84,9 +84,18 @@ python agents.py
 
 As the script runs, each call from `call_data.json` is processed by the **Intent Classification Agent** role first, and the high-priority batch is then processed by the **Resolution Advisor Agent** role. The raw responses are printed in the terminal.
 
+## Experiment
+
+1. Change one sentence in an agent's instructions and rerun the script.
+2. Change one call detail in [`call_data.json`](./call_data.json) and predict the result before rerunning.
+3. Inspect `LOOKUP_CUSTOMER_TOOL` and `lookup_customer()` to see the contract between the model and Python.
+4. Discuss which calls must always be escalated to a human.
+
 
 ## Success Criteria
 
 - [ ] Intent Classification Agent correctly identifies all 6 intent types across 7 calls
 - [ ] Resolution Advisor provides actionable recommendations with scripts and escalation decisions
 - [ ] Security concerns are always escalated; billing disputes offer appropriate credits
+
+Continue to [Challenge 2: Local Workflow](../challenge-2-workflow/README.md).

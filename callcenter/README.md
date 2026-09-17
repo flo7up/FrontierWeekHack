@@ -30,21 +30,17 @@ Build an AI agent system that:
 
 | # | Challenge | What You'll Do | Time |
 |---|-----------|---------------|------|
-| 0 | [Setup](./challenge-0-setup/README.md) | Deploy Microsoft Foundry infrastructure | 20 min |
-| 1 | [Build Agents](./challenge-1-build/README.md) | Create Intent Classification + Resolution Advisor agents | 30 min |
-| 2 | [Monitor](./challenge-2-monitor/README.md) | Enable GenAI tracing with Application Insights | 20 min |
-| 3 | [Evaluate](./challenge-3-evaluate/README.md) | Run systematic quality evaluations | 30 min |
-| 4 | [Production Workflow](./challenge-4-deploy/README.md) | Multi-agent orchestration + portal workflow | 20 min |
+| 0 | [Connect](./challenge-0-setup/README.md) | Configure the shared Foundry model | 15 min |
+| 1 | [Build Agents](./challenge-1-build/README.md) | Run classification and resolution roles | 75 min |
+| 2 | [Local Workflow](./challenge-2-workflow/README.md) | Orchestrate both roles into a shift report | 60 min |
 
-## Why the Challenges Are in This Order
+## What You Will Learn
 
-**Build first.** Intent classification only works if the agent has sharp instructions and real account context. An agent that can't tell a cancellation risk from a billing dispute will route calls wrong — sending retention offers to customers who just have a billing question, and putting high-value accounts in the wrong queue. The `lookup_customer` tool gives the Intent Agent actual account data: tier, tenure, open cases. Without it, the agent is guessing.
-
-**Then monitor.** A call triage system runs all day across hundreds of calls. Application Insights traces let you see what the agent actually did for each one — whether it called `lookup_customer`, how long it took, and exactly what it recommended. When a supervisor says "the system gave wrong advice on CALL-007," traces are how you find out why.
-
-**Then evaluate.** The test dataset has known right answers. Running the agents against it — before and after every change — gives you a score that tells you whether classification is improving or quietly degrading. A prompt tweak that looks fine on five spot-checked responses can still break precision on edge cases you didn't happen to check.
-
-**Then deploy.** The portal workflow produces the shift report supervisors can actually act on: prioritized queue, recommended actions, customer context, full trace history. That's the gap between a Python script you run manually and something the operations team trusts at the start of every shift.
+- How instructions shape an agent role
+- How a model chooses and calls a local function tool
+- How grounded customer context improves recommendations
+- How multiple roles can be orchestrated in Python
+- Where production systems need identity, observability, evaluation, and human review
 
 
 
@@ -54,7 +50,7 @@ Build an AI agent system that:
 
 ## Next Steps
 
-Completing these challenges gives you a working multi-agent system with observability and evaluation in place. Here are the directions you can take it further:
+Completing these challenges gives you a working local multi-agent workflow. Here are production directions to discuss after the hands-on section:
 
 **Deploy as a hosted agent endpoint**
 Microsoft Foundry can host your agents as persistent, scalable API endpoints — no infrastructure to manage. Once hosted, your telephony platform (Twilio, Genesys, Azure Communication Services) can push live call transcripts directly to the Intent Classification Agent and receive triage decisions in real time, replacing manual queue review.

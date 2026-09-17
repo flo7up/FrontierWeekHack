@@ -30,21 +30,17 @@ Build an AI agent system that:
 
 | # | Challenge | What You'll Do | Time |
 |---|-----------|---------------|------|
-| 0 | [Setup](./challenge-0-setup/README.md) | Deploy Microsoft Foundry infrastructure | 20 min |
-| 1 | [Build Agents](./challenge-1-build/README.md) | Create Anomaly Detection + Fault Diagnosis agents | 30 min |
-| 2 | [Monitor](./challenge-2-monitor/README.md) | Enable GenAI tracing with Application Insights | 20 min |
-| 3 | [Evaluate](./challenge-3-evaluate/README.md) | Run systematic quality evaluations | 30 min |
-| 4 | [Production Workflow](./challenge-4-deploy/README.md) | Multi-agent orchestration + portal workflow | 20 min |
+| 0 | [Connect](./challenge-0-setup/README.md) | Configure the shared Foundry model | 15 min |
+| 1 | [Build Agents](./challenge-1-build/README.md) | Run anomaly detection and fault diagnosis roles | 75 min |
+| 2 | [Local Workflow](./challenge-2-workflow/README.md) | Orchestrate both roles into a health report | 60 min |
 
-## Why the Challenges Are in This Order
+## What You Will Learn
 
-**Build first.** An agent with a vague system prompt or missing tools will hallucinate plausible-sounding diagnoses. For a tire manufacturing plant, that's not an academic problem — it means maintenance crews chasing phantom faults, or missing real ones until a machine fails mid-shift. The `check_thresholds` tool grounds the Anomaly Agent in actual machine specs, not general LLM knowledge about what "normal" vibration looks like for an extruder.
-
-**Then monitor.** When the Fault Diagnosis Agent recommends pulling CP-003 offline, did it actually examine the sensor readings you fed it? Did `check_thresholds` get called, or did the agent reason from context alone? Application Insights traces answer that. Without them, the only signal you have is a machine failure that should have been caught earlier.
-
-**Then evaluate.** Tracing tells you the agent ran. Evaluation tells you it ran correctly. The curated test dataset gives you a repeatable score to compare before and after any prompt change or model swap — so you catch regressions before they reach the production floor.
-
-**Then deploy.** The portal workflow turns what you built in scripts into something the maintenance team can actually hand off: a stable endpoint, a per-shift factory health report, and a trace history for every diagnosis. That's the gap between a demo and a tool someone will actually trust before scheduling an unplanned maintenance window.
+- How instructions shape an agent role
+- How a model chooses and calls a local function tool
+- How grounded tool output reduces hallucination risk
+- How multiple roles can be orchestrated in Python
+- Where production systems need identity, observability, evaluation, and human approval
 
 
 ## Architecture
@@ -54,7 +50,7 @@ Build an AI agent system that:
 
 ## Next Steps
 
-Completing these challenges gives you a working multi-agent system with observability and evaluation in place. Here are the directions you can take it further:
+Completing these challenges gives you a working local multi-agent workflow. Here are production directions to discuss after the hands-on section:
 
 **Deploy as a hosted agent endpoint**
 Microsoft Foundry can host your agents as persistent, scalable API endpoints — no infrastructure to manage. Once hosted, any system (a SCADA dashboard, a mobile maintenance app, a Slack bot) can send a machine ID and receive a diagnosis in real time, rather than running a Python script manually.

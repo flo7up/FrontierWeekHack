@@ -18,12 +18,14 @@ class ApiKeyAgent:
 
 def create_foundry_client() -> OpenAI:
     endpoint = os.getenv("FOUNDRY_ENDPOINT", "").rstrip("/")
-    api_key = os.getenv("API_KEY", "")
+    api_key = os.getenv("API_KEY", "").strip()
 
     if not endpoint:
         raise RuntimeError("FOUNDRY_ENDPOINT is not set in the scenario .env file.")
     if not api_key:
         raise RuntimeError("API_KEY is not set in the scenario .env file.")
+    if api_key.casefold() == "xxx":
+        raise RuntimeError("Replace API_KEY=XXX in your local .env with the key supplied privately by the facilitator.")
 
     return OpenAI(
         api_key=api_key,

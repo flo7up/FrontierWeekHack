@@ -1,133 +1,55 @@
-# Challenge 0: Setup & Authentication
+# Challenge 0: Connect
 
-Time: ~20 minutes
+Time: ~15 minutes
 
-## Objectives
+Connect the Factory scenario to the shared workshop model. You do not need an Azure subscription, Azure CLI, or portal access.
 
-By the end of this challenge, you will have:
+## 1. Prepare Python
 
-- ✅ A fully provisioned Microsoft Foundry project with a deployed model
-- ✅ Application Insights provisioned and connection string available
-- ✅ Verified authentication from your local machine to Foundry
-- ✅ Confirmed your agent endpoint is working
-
-![setup](./images/setup.png)
-
-## Get Started
-
-> [!NOTE]
-> Before you begin, make sure you have:
-> - An **Azure subscription** where you hold both the **Contributor** role (to deploy the infrastructure) and the **Foundry User** role (to build, evaluate, and run agents in Challenges 1–4).
-> - A **GitHub handle** (account) to fork this repository and run it in GitHub Codespaces.
->
-> Subscription **Owner** (or Contributor) rights alone are **not** sufficient. Those grant control-plane access to create and manage resources, but building and running agents are data-plane operations that require the separate **Foundry User** role assigned on the Foundry account. An Owner can self-assign it; a Contributor must ask an admin to assign it after deployment.
-
-There are two ways to get started — pick one:
-
-### Use an existing resource without Azure CLI
-
-If a Foundry resource and model deployment have already been provided, no Azure login is needed to run Challenges 1–4. Copy [`.env.template`](./.env.template) to `factory/.env` and set `FOUNDRY_ENDPOINT`, `MODEL_DEPLOYMENT_NAME`, and `API_KEY`. Set the Application Insights connection string as well to complete Challenge 2. Skip infrastructure deployment below.
-
-The resource API key authorizes model data-plane calls only. It cannot provision Azure resources or create persistent Foundry project agents and workflows.
-
-> **First step for both options:** [Fork this repository](https://github.com/microsoft/FrontierWeekHack/fork) to your own GitHub account.
-
-### Option A: GitHub Codespaces (recommended)
-
-No local installs needed. Everything runs in a cloud dev environment.
-
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/microsoft/FrontierWeekHack)
-
-1. Click the badge above (select your fork if applicable)
-2. Wait for the Codespace to build (~2 min)
-3. In the terminal, log in to Azure:
+From the repository root:
 
 ```bash
-az login
+python -m venv .venv
 ```
 
-4. Continue to **Deploy Infrastructure** below.
+Activate the environment, then install dependencies:
 
----
+=== "Windows PowerShell"
 
-### Option B: Local environment
+    ```powershell
+    .\.venv\Scripts\Activate.ps1
+    pip install -r requirements.txt
+    ```
 
-Run everything on your own machine. Requires Python 3.10+ and Azure CLI.
+=== "macOS or Linux"
+
+    ```bash
+    source .venv/bin/activate
+    pip install -r requirements.txt
+    ```
+
+## 2. Create Local Configuration
+
+Copy [`workshop.env.template`](./workshop.env.template) to `factory/.env`. The shared endpoint and model deployment name are already filled in. Replace only `XXX` with the API key supplied privately by the facilitator:
+
+```dotenv
+API_KEY=XXX
+```
+
+Keep the endpoint and model lines unchanged. Edit only your local `.env`, not the public template. Never commit or post the API key, even partially masked. The repository ignores `.env` files.
+
+## 3. Test the Connection
+
+From the repository root:
 
 ```bash
-# 1. Clone this repo
-git clone https://github.com/microsoft/FrontierWeekHack.git
-cd FrontierWeekHack
-
-# 2. Create and activate a virtual environment
-python3 -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-
-# 3. Install Python dependencies
-pip install -r requirements.txt
-
-# 4. Log in to Azure
-az login
+python smoke_test.py factory
 ```
 
-4. Continue to **Deploy Infrastructure** below.
+Success looks like:
 
-## Deploy Infrastructure
-
-From the **factory** folder, run the deploy script:
-
-```bash
-bash challenge-0-setup/deploy.sh
+```text
+WORKSHOP_READY: factory can use model deployment '...'.
 ```
 
-This will provision all resources **and** automatically write your `.env` file to the `factory` folder as `factory/.env`. The deployment will take a couple of minutes to complete.
-
-### Generate configuration for existing resources
-
-If the resources are already deployed and you need to regenerate `factory/.env`, use [generate-env.ps1](./generate-env.ps1). It only reads Azure resources; it does not deploy resources, change role assignments, or switch your active subscription. Requires PowerShell and Azure CLI, already signed in.
-
-From the **repository root**, run:
-
-```powershell
-.\factory\challenge-0-setup\generate-env.ps1 -ResourceGroup "<existing-resource-group>"
-```
-
-The script uses the current Azure CLI subscription and the `factory-project` project. It discovers the Foundry account, model deployment name, and Application Insights component within the specified resource group. It writes the endpoints, monitoring connection details, and tracing settings to `factory/.env`, which the challenge scripts load automatically.
-
-- Use `-SubscriptionId "<subscription-id>"` to read from another subscription.
-- Use `-FoundryResourceName`, `-ModelDeploymentName`, or `-AppInsightsName` to select a resource when multiple candidates exist. The script stops instead of guessing.
-- Use `-ProjectName` if your project has a different name, or `-OutputPath` to choose another output file.
-- Existing files are protected by default. Add `-Force` to replace the file, including custom settings such as `WORKFLOW_AGENT_NAME`. Azure lookup failures or missing required values leave the existing file unchanged.
-
-The script does not print connection details. Keep the generated file private; `.env` is already excluded from Git. This only restores local configuration; it does not repair missing Azure resources, monitoring connections, or permissions.
-
-## Verify the creation of your resources
-
-Go to the [Azure Portal](https://portal.azure.com/) and find your resource group, which should now contain resources like this:
-
-![Azure Portal Resources](./images/azure-portal-resources.png)
-
-> [!NOTE]
-> The resource name prefixes vary by scenario and the suffixes are unique for each deployment
-
-Go to the [Microsoft Foundry Portal](https://ai.azure.com/nextgen) and verify that you can access the Foundry project.
-
-![Foundry Project](./images/foundry-project.png)
-
-Select **Build** in the top navigation, then **Models**, and verify that the **gpt-5.4** model is deployed.
-
->[!NOTE]
-> In some versions of the Foundry Portal the **Models** tab is rebranded to **Deployments** but they serve the same purpose.
-
-![Foundry Model](./images/foundry-model.png)
-
-Select **gpt-5.4**, enter a test message in the model playground, and verify that you get a response.
-
-![Foundry Model Playground](./images/foundry-model-playground.png)
-
-
-## Success Criteria
-
-- [ ] You can see your Microsoft Foundry project in the Azure Portal
-- [ ] A model deployment for gpt-5.4 shows "Succeeded" status
-- [ ] You can send a test message in the Foundry Model Playground
+Continue to [Challenge 1: Build Agents](../challenge-1-build/README.md).

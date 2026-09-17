@@ -1,6 +1,6 @@
 # Challenge 1: Build Agents
 
-Time: ~30 minutes
+Time: ~75 minutes
 
 ## Objectives
 
@@ -21,13 +21,13 @@ TireForge Industries has 5 machines on the production floor. Each machine emits 
 
 Check out [sensor_data.json](./sensor_data.json) to see the current state of all machines.
 
-## Portal or SDK?
+## How It Works
 
-Microsoft Foundry supports portal-hosted agents and direct model calls. This lab uses the **OpenAI Responses API** with the Foundry resource endpoint and `API_KEY`, so no Azure CLI login or `DefaultAzureCredential` is required at runtime.
+This lab uses the **OpenAI Responses API** with the shared Foundry endpoint and workshop API key. The code runs locally and creates no portal resources.
 
 ![foundry](./images/foundry.png)
 
-The code in [agents.py](./agents.py) configures two local agent roles, registers their tools, and runs them against every machine in `sensor_data.json`. API-key roles are created for each run and do not appear as persistent assets in the Foundry portal.
+The code in [agents.py](./agents.py) configures two agent roles, registers a local tool, and runs them against every machine in `sensor_data.json`.
 
 ## Agents and Tools
 
@@ -39,7 +39,7 @@ In this lab, an agent is a model call configured with instructions and optional 
 - A **system prompt** — instructions that define its role, personality, and constraints
 - One or more **tools** it can call when it needs information or actions beyond its training data
 
-These API-key agents are local configurations, not managed project resources. Persistent portal agents require Entra authentication.
+The roles are local configurations: instructions, model, and tools sent with each request.
 
 ### What are tools?
 
@@ -84,8 +84,17 @@ python agents.py
 
 As the script runs, each machine from `sensor_data.json` is processed by the **Anomaly Detection Agent** role first, and the high-risk batch is then processed by the **Fault Diagnosis Agent** role. The raw responses are printed in the terminal.
 
+## Experiment
+
+1. Change one sentence in an agent's instructions and rerun the script.
+2. Change one sensor reading in [`sensor_data.json`](./sensor_data.json) and predict the result before rerunning.
+3. Inspect `CHECK_THRESHOLDS_TOOL` and `check_thresholds()` to see the contract between the model and Python.
+4. Discuss what could go wrong if the model made threshold decisions without the tool.
+
 ## Success Criteria
 
 - [ ] Anomaly Detection Agent correctly identifies the 2 warning + 1 critical machine
 - [ ] Fault Diagnosis Agent provides reasonable maintenance recommendations
 - [ ] Both agents respond coherently when given a machine's sensor readings
+
+Continue to [Challenge 2: Local Workflow](../challenge-2-workflow/README.md).

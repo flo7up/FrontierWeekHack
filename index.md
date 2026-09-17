@@ -1,46 +1,42 @@
 ![Banner](./assets/images/banner.png)
 
-# Lab — Build AI Agents with Microsoft Foundry
-Welcome to the hands-on lab for the **Microsoft Cloud & AI Frontier Week Hackathon** — where ideas turn into real solutions.
+# Build AI Agents with Microsoft Foundry
 
-Throughout Frontier Week, you've explored how AI is transforming organizations. This is where you put that into practice.
-
-In this lab, you'll **build, monitor, evaluate, and orchestrate AI agents** using the Microsoft Foundry SDK — following a guided, scenario-based experience designed to take you from concept to a working, enterprise-ready multi-agent system.
-
-By the end, you won't just understand how agents work — you'll have built one you can **trace, evaluate, and deploy**.
+This three-hour workshop gives you a practical introduction to tool-using AI agents. Pick one scenario, connect to a shared Microsoft Foundry model, build two agent roles, and combine them in a local workflow.
 
 ## Choose Your Scenario
 
-All three scenarios use the same five-challenge structure. Pick whichever industry fits your interest.
-
 | Scenario | Domain | What You Build |
 |----------|--------|----------------|
-| [🏭 Factory](./factory/README.md) | Predictive Maintenance | Anomaly Detection + Fault Diagnosis agents |
-| [📋 Claims](./claims/README.md) | Insurance Processing | Claims Triage + Claims Decision agents |
-| [📞 Call Center](./callcenter/README.md) | Customer Support | Intent Classification + Resolution Advisor agents |
+| [🏭 Factory](./factory/README.md) | Predictive maintenance | Anomaly detection and fault diagnosis |
+| [📋 Claims](./claims/README.md) | Insurance processing | Claims triage and decision support |
+| [📞 Call Center](./callcenter/README.md) | Customer support | Intent classification and resolution advice |
 
-## Challenge Structure
+## Workshop Agenda
 
-Every scenario follows the same five challenges:
+| Stage | Duration | Outcome |
+|-------|----------|---------|
+| Connect | 15 min | Configure the shared endpoint, model, and workshop API key |
+| Build | 75 min | Run two agent roles and a local function tool |
+| Break | 15 min | |
+| Workflow | 60 min | Orchestrate the roles into an end-to-end report |
+| Experiment and debrief | 15 min | Change a prompt or input and discuss production concerns |
 
-| # | Challenge | Duration |
-|---|-----------|----------|
-| 0 | **Setup** — Deploy Azure AI Foundry infrastructure | 20 min |
-| 1 | **Build Agents** — Create two AI agents with tools | 30 min |
-| 2 | **Monitor** — Enable GenAI tracing with Application Insights | 20 min |
-| 3 | **Evaluate** — Run systematic quality evaluations | 30 min |
-| 4 | **Workflow** — Multi-agent orchestration via the Foundry portal | 20 min |
+## What This Workshop Skips
 
-## Prerequisites
+To fit three hours and avoid requiring participant portal access, the hands-on path does not create hosted agents, configure shared Application Insights, or run portal evaluations. The debrief covers why production systems still need identity, secret management, observability, quality evaluation, content safety, cost controls, and human approval.
 
-- Azure subscription with Contributor access
-- Python 3.10+
-- Azure CLI (`az`) installed and authenticated (`az login`)
-- A terminal (bash, PowerShell, or WSL)
+## What You Need
+
+- Python 3.10 or newer
+- A terminal and code editor
+- The workshop API key supplied privately by the facilitator; the endpoint and model are prefilled in the public templates
+
+You do **not** need an Azure subscription, Azure CLI, or access to the Microsoft Foundry portal. All participant exercises use a shared model through its API key.
 
 ## Getting Started
 
-1. Clone this repo and pick a scenario folder (`factory/`, `claims/`, or `callcenter/`)
-2. Start with **Challenge 0** — it provisions everything you need
-3. Work through challenges 1–4 in order; each builds on the previous one
-4. The `agents.py` and `deploy.py` scripts are ready to run — read the README in each challenge folder for what to do
+1. Clone the workshop repository.
+2. Pick one scenario.
+3. Open its overview and complete Connect, Build, and Local Workflow in order.
+4. Never commit or share the workshop API key.

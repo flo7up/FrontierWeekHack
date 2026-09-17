@@ -31,31 +31,26 @@ You'll build two agents:
 - **Python 3.10+** installed locally
 - A Foundry resource API key
 - A terminal (bash, PowerShell, or WSL)
-- Optional: Azure CLI and Contributor access only when provisioning new infrastructure
 
 ## Structure
 
-All challenges are Python SDK-based. Challenge 4 also walks you through the Foundry portal to build and test the multi-agent workflow visually.
+All participant exercises run locally through the shared model API. No Azure subscription or portal access is required.
 
 ## Challenges
 
 | # | Challenge | Duration | What You'll Do |
 |---|-----------|----------|----------------|
-| 0 | [Setup](./challenge-0-setup/README.md) | 20 min | Provision resources, verify auth |
-| 1 | [Build Agents](./challenge-1-build/README.md) | 30 min | Create claims triage & decision agents |
-| 2 | [Monitor](./challenge-2-monitor/README.md) | 20 min | Enable tracing, explore App Insights |
-| 3 | [Evaluate](./challenge-3-evaluate/README.md) | 30 min | Run evaluations, interpret quality metrics |
-| 4 | [Workflow](./challenge-4-deploy/README.md) | 20 min | Build a multi-agent workflow: triage → decision → claims report |
+| 0 | [Connect](./challenge-0-setup/README.md) | 15 min | Configure and test the shared model |
+| 1 | [Build Agents](./challenge-1-build/README.md) | 75 min | Run claims triage and decision roles |
+| 2 | [Local Workflow](./challenge-2-workflow/README.md) | 60 min | Orchestrate triage → decision → claims report |
 
-## Why the Challenges Are in This Order
+## What You Will Learn
 
-**Build first.** Without precise instructions and real claim data, the agents can't make useful decisions. The Claims Triage Agent without `assess_claim` is pattern-matching on claim descriptions — it has no way to check actual fraud scores, document completeness ratios, or damage-estimate variance. Ambiguous system prompts mean inconsistent decisions: the same risk profile might get approved one day and flagged the next.
-
-**Then monitor.** Every decision the Claims Decision Agent makes needs to be traceable. For insurance claims, that's not optional — it's a business and regulatory requirement. Application Insights traces give you a complete record: what data the agent received, which tools it called, and exactly what it recommended. When an auditor asks why CLM-003 was sent for investigation, that trace is your answer.
-
-**Then evaluate.** Two claims with the same fraud score and document completeness should get the same recommendation. Evaluation gives you a repeatable way to check that they do — and catches it when a prompt update breaks that consistency before it affects real claims.
-
-**Then deploy.** The portal workflow connects triage to decision, processes a full claims batch, and produces a report that compliance teams can sign off on. That's the difference between a demo and something you'd put in front of an actual adjuster.
+- How instructions shape an agent role
+- How a model chooses and calls a local function tool
+- How grounded claim metrics improve decisions
+- How multiple roles can be orchestrated in Python
+- Where production systems need identity, auditability, evaluation, and human approval
 
 
 ## Architecture
@@ -65,7 +60,7 @@ All challenges are Python SDK-based. Challenge 4 also walks you through the Foun
 
 ## Next Steps
 
-Completing these challenges gives you a working multi-agent system with observability and evaluation in place. Here are the directions you can take it further:
+Completing these challenges gives you a working local multi-agent workflow. Here are production directions to discuss after the hands-on section:
 
 **Deploy as a hosted agent endpoint**
 Microsoft Foundry can host your agents as persistent, scalable API endpoints — no infrastructure to manage. Once hosted, your claims intake system can submit new claims directly to the Triage Agent and receive a structured decision (approve / investigate / request documents / deny) without any manual triage step.
