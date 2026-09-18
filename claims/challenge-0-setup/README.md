@@ -1,7 +1,5 @@
 # Challenge 0: Connect
 
-Time: 20 minutes, including the welcome and scenario choice.
-
 **Goal:** see `WORKSHOP_READY` in your terminal. You will use the facilitator's model, not create Azure resources. No Azure subscription, CLI, or portal login is needed.
 
 ## 1. Open the Workshop Folder

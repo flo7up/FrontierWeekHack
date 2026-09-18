@@ -1,7 +1,5 @@
 # Challenge 2: Local Workflow
 
-Time: 55 minutes, including review and an optional experiment.
-
 **Goal:** explain how a sequence of steps differs from a single AI answer. The supplied Python program coordinates the steps; it does not deploy anything, change equipment, or require portal access.
 
 ## 1. Run the Combined Example

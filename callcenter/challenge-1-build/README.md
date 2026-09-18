@@ -1,7 +1,5 @@
 # Challenge 1: Build Agents
 
-Time: 70 minutes, including discussion and an optional experiment.
-
 ## Objectives
 
 By the end of this challenge, you will have:
