@@ -3,7 +3,8 @@
 import json
 import os
 from dataclasses import dataclass
-from typing import Callable
+from time import perf_counter
+from typing import Callable, Literal
 
 from openai import OpenAI
 
@@ -41,22 +42,38 @@ def run_agent_response(
     input_text: str,
     tools: list[dict] | None = None,
     tool_handlers: dict[str, Callable[..., str]] | None = None,
+    reasoning_effort: Literal["low", "medium", "high"] | None = None,
+    on_progress: Callable[[str], None] | None = None,
 ) -> str:
     """Run one response and complete any local function-tool calls."""
-    response = client.responses.create(
-        model=model,
-        instructions=instructions,
-        input=input_text,
-        tools=tools or [],
-    )
+    request_options = {}
+    if reasoning_effort is not None:
+        request_options["reasoning"] = {"effort": reasoning_effort}
+    response_input = input_text
+    request_number = 0
 
     while True:
+        request_number += 1
+        if on_progress:
+            on_progress(f"Model request {request_number}: waiting for {model}...")
+        started = perf_counter()
+        response = client.responses.create(
+            model=model,
+            instructions=instructions,
+            input=response_input,
+            tools=tools or [],
+            **request_options,
+        )
+        if on_progress:
+            on_progress(f"Model request {request_number} completed in {perf_counter() - started:.1f}s.")
         function_calls = [item for item in response.output if item.type == "function_call"]
         if not function_calls:
             return response.output_text
 
         outputs = []
         for item in function_calls:
+            if on_progress:
+                on_progress(f"Running tool: {item.name}")
             handler = (tool_handlers or {}).get(item.name)
             if handler is None:
                 result = json.dumps({"error": f"Unknown tool '{item.name}'"})
@@ -70,10 +87,5 @@ def run_agent_response(
                 }
             )
 
-        response = client.responses.create(
-            model=model,
-            instructions=instructions,
-            input=outputs,
-            tools=tools or [],
-            previous_response_id=response.id,
-        )
+        response_input = outputs
+        request_options["previous_response_id"] = response.id

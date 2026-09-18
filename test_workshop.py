@@ -2,18 +2,127 @@
 
 import contextlib
 import io
+import json
 import os
 from pathlib import Path
+import runpy
 import shutil
 import subprocess
 import sys
 import tempfile
 import unittest
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import openai
 
+import foundry_api
 import smoke_test
+
+
+class AgentResponseTests(unittest.TestCase):
+    def test_tool_round_trips_keep_reasoning_and_report_progress(self):
+        client = MagicMock()
+        handler = MagicMock(return_value='{"anomalies": []}')
+        progress = []
+        tool_calls = [
+            SimpleNamespace(type="function_call", name="check_thresholds", arguments=json.dumps({"machine_id": machine_id}), call_id=machine_id)
+            for machine_id in ("MX-001", "EX-002")
+        ]
+        client.responses.create.side_effect = [
+            SimpleNamespace(id="response-1", output=tool_calls),
+            SimpleNamespace(id="response-2", output=[tool_calls[0]]),
+            SimpleNamespace(id="response-3", output=[], output_text="Scan complete"),
+        ]
+        tools = [{"type": "function", "name": "check_thresholds"}]
+        result = foundry_api.run_agent_response(
+            client, model="gpt-5.4", instructions="Check machines", input_text="Scan",
+            tools=tools, tool_handlers={"check_thresholds": handler},
+            reasoning_effort="low", on_progress=progress.append,
+        )
+        self.assertEqual(result, "Scan complete")
+        requests = client.responses.create.call_args_list
+        self.assertEqual(len(requests), 3)
+        for request in requests:
+            self.assertEqual(request.kwargs["reasoning"], {"effort": "low"})
+            self.assertEqual(request.kwargs["tools"], tools)
+        self.assertNotIn("previous_response_id", requests[0].kwargs)
+        self.assertEqual(requests[1].kwargs["previous_response_id"], "response-1")
+        self.assertEqual(requests[2].kwargs["previous_response_id"], "response-2")
+        self.assertEqual([item["call_id"] for item in requests[1].kwargs["input"]], ["MX-001", "EX-002"])
+        self.assertEqual(handler.call_count, 3)
+        self.assertEqual(progress[0], "Model request 1: waiting for gpt-5.4...")
+        self.assertIn("Model request 3 completed in", progress[-1])
+        self.assertEqual(progress.count("Running tool: check_thresholds"), 3)
+
+    def test_default_request_keeps_existing_api_options(self):
+        client = MagicMock()
+        client.responses.create.return_value = SimpleNamespace(output=[], output_text="Ready")
+        self.assertEqual(foundry_api.run_agent_response(
+            client, model="test-model", instructions="Test", input_text="Hello",
+        ), "Ready")
+        client.responses.create.assert_called_once_with(
+            model="test-model", instructions="Test", input="Hello", tools=[],
+        )
+
+
+class AnomalyScanTests(unittest.TestCase):
+    def setUp(self):
+        source = Path(__file__).resolve().parent / "factory/challenge-2-workflow/workflow.py"
+        with patch.dict(os.environ), patch("dotenv.load_dotenv"):
+            self.scan = runpy.run_path(str(source))["run_anomaly_scan"]
+
+    def run_scan(self, model="gpt-5.4", error=None):
+        factory = MagicMock()
+        client = factory.return_value.__enter__.return_value
+        request = client.with_options.return_value.responses.create
+        request.return_value = SimpleNamespace(output=[], output_text="Scan complete")
+        request.side_effect = error
+        output = io.StringIO()
+        with patch.dict(self.scan.__globals__, create_foundry_client=factory, MODEL_DEPLOYMENT_NAME=model):
+            with contextlib.redirect_stdout(output):
+                if error:
+                    with self.assertRaises(type(error)):
+                        self.scan("anomaly-detection-agent")
+                else:
+                    self.assertEqual(self.scan("anomaly-detection-agent"), "Scan complete")
+        client.with_options.assert_called_once_with(timeout=90.0, max_retries=0)
+        factory.return_value.__exit__.assert_called_once()
+        self.assertIn("Model request 1: waiting", output.getvalue())
+        return request.call_args.kwargs
+
+    def test_scan_requests_low_reasoning_for_workshop_model(self):
+        self.assertEqual(self.run_scan()["reasoning"], {"effort": "low"})
+
+    def test_other_deployments_keep_their_reasoning_defaults(self):
+        self.assertNotIn("reasoning", self.run_scan(model="other-model"))
+
+    def test_timeout_closes_client_without_retrying(self):
+        self.run_scan(error=openai.APITimeoutError(request=MagicMock()))
+
+    def test_batch_tool_supplies_all_five_machines_in_one_round_trip(self):
+        factory = MagicMock()
+        client = factory.return_value.__enter__.return_value
+        request = client.with_options.return_value.responses.create
+        request.side_effect = [
+            SimpleNamespace(id="response-1", output=[SimpleNamespace(
+                type="function_call", name="check_all_thresholds", arguments="{}", call_id="all-machines",
+            )]),
+            SimpleNamespace(id="response-2", output=[], output_text="Scan complete"),
+        ]
+        with patch.dict(self.scan.__globals__, create_foundry_client=factory):
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(self.scan("anomaly-detection-agent"), "Scan complete")
+        self.assertEqual(request.call_count, 2)
+        tool = request.call_args_list[0].kwargs["tools"][0]
+        self.assertEqual(tool["name"], "check_all_thresholds")
+        self.assertEqual(tool["parameters"]["required"], [])
+        outputs = request.call_args_list[1].kwargs["input"]
+        self.assertEqual(len(outputs), 1)
+        self.assertEqual(outputs[0]["call_id"], "all-machines")
+        machines = json.loads(outputs[0]["output"])["machines"]
+        self.assertEqual([machine["machine_id"] for machine in machines], ["MX-001", "EX-002", "CP-003", "CU-004", "IS-005"])
+        self.assertEqual([machine["machine_id"] for machine in machines if machine["anomalies"]], ["MX-001", "CP-003", "IS-005"])
 
 
 class ConnectionTests(unittest.TestCase):

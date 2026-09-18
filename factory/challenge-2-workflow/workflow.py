@@ -72,6 +72,11 @@ def check_thresholds(machine_id: str) -> str:
     return json.dumps(results, indent=2)
 
 
+def check_all_thresholds() -> str:
+    """Check every machine in one local tool invocation."""
+    return json.dumps({"machines": [json.loads(check_thresholds(machine_id)) for machine_id in MACHINES]})
+
+
 def configure_agent_roles() -> tuple:
     """Configure the two local agent roles used by the workflow."""
     print("=== Step 1: Configure API-Key Agent Roles ===")
@@ -82,37 +87,40 @@ def configure_agent_roles() -> tuple:
 
 def run_anomaly_scan(anomaly_agent_name: str) -> str:
     """Call the anomaly detection agent for all machines; handle function call loop."""
-    print("\n=== Step 2a: Anomaly Scan ===")
+    print("\n=== Step 2a: Anomaly Scan ===", flush=True)
+    print("  Model requests use a 90s timeout with no automatic retries.", flush=True)
 
-    client = create_foundry_client()
     tool = {
         "type": "function",
-        "name": "check_thresholds",
-        "description": "Check sensor readings against thresholds for a machine.",
+        "name": "check_all_thresholds",
+        "description": "Check sensor readings against thresholds for all five factory machines in one call.",
         "parameters": {
             "type": "object",
-            "properties": {"machine_id": {"type": "string"}},
-            "required": ["machine_id"],
+            "properties": {},
+            "required": [],
             "additionalProperties": False,
         },
-        "strict": False,
+        "strict": True,
     }
-    report = run_agent_response(
-        client,
-        model=MODEL_DEPLOYMENT_NAME,
-        instructions=(
-            "You are an industrial sensor anomaly detection expert for TireForge Industries. "
-            "Use check_thresholds for each machine ID and report every out-of-spec reading."
-        ),
-        input_text=(
-            f"Check all machines: {', '.join(MACHINES)}. "
-            "Report every sensor reading that is out of spec."
-        ),
-        tools=[tool],
-        tool_handlers={"check_thresholds": check_thresholds},
-    )
-    client.close()
-    return report
+    with create_foundry_client() as client:
+        return run_agent_response(
+            client.with_options(timeout=90.0, max_retries=0),
+            model=MODEL_DEPLOYMENT_NAME,
+            instructions=(
+                "You are an industrial sensor anomaly detection expert for TireForge Industries. "
+                "Call check_all_thresholds once to get readings for every machine. "
+                "Then report every out-of-spec reading, grouped by machine, and briefly name "
+                "the machines that are within spec. Do not repeat the tool call."
+            ),
+            input_text=(
+                f"Check all machines: {', '.join(MACHINES)}. "
+                "Report every sensor reading that is out of spec."
+            ),
+            tools=[tool],
+            tool_handlers={"check_all_thresholds": check_all_thresholds},
+            reasoning_effort="low" if MODEL_DEPLOYMENT_NAME == "gpt-5.4" else None,
+            on_progress=lambda message: print(f"  {message}", flush=True),
+        )
 
 
 def run_fault_diagnosis(diagnosis_agent_name: str, machine_id: str, anomalies: list) -> str:

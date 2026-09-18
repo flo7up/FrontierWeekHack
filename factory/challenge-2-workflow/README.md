@@ -26,9 +26,11 @@ python factory/challenge-2-workflow/workflow.py
 
 This makes several model requests and may take a few minutes. Wait for **`Workflow complete!`** before starting another run. If it appears stuck, press **Ctrl+C** and ask the facilitator; do not repeatedly restart it. For connection errors, use the [Connect troubleshooting table](../challenge-0-setup/README.md#if-something-goes-wrong).
 
+The anomaly scan checks all five machines in one local tool call, normally requiring two model requests: one to request the tool and one to write the report. It prints each request and its elapsed time, with a 90-second network timeout per request and no automatic retries. The default `gpt-5.4` deployment uses low reasoning effort for this scan; other deployments retain their defaults. The diagnosis steps still run separately for each affected machine.
+
 ## 2. Follow the Steps
 
-1. The anomaly role requests tool checks and produces a report on all five machines.
+1. The anomaly role requests one `check_all_thresholds` tool call and produces a report on all five machines.
 2. Python recalculates the threshold checks to select machines with out-of-range readings. It does not interpret the model's report to make this selection.
 3. The diagnosis role receives each selected machine's calculated anomalies and suggests causes and next steps.
 4. Python collects the results into one report.
